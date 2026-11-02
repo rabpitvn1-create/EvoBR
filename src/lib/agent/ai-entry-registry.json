@@ -1,0 +1,577 @@
+{
+  "version": 2,
+  "bindingVersion": 1,
+  "scope": "formal-ai-execution-entry",
+  "offlineEvaluations": [],
+  "limitedTransports": [
+    {
+      "entryId": "longform.voice.input",
+      "boundary": "ephemeral-author-input",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/longform-voice/session.ts"
+      ],
+      "reason": "\u6d4f\u89c8\u5668\u6216\u72ec\u7acb\u8bed\u97f3\u670d\u52a1\u4ec5\u5c06\u663e\u5f0f\u5f55\u97f3\u8f6c\u6210\u53ef\u7f16\u8f91\u8f93\u5165\uff0c\u4e0d\u81ea\u52a8\u53d1\u9001\u3001\u6267\u884c\u6216\u91c7\u7eb3\u3002"
+    },
+    {
+      "entryId": "longform.voice.output",
+      "boundary": "read-only-audio",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/longform-voice/session.ts"
+      ],
+      "reason": "\u4ec5\u6717\u8bfb\u4f5c\u8005\u9009\u62e9\u7684\u53ef\u89c1\u6587\u672c\uff1b\u4e0d\u8bfb\u53d6\u6570\u636e\u5e93\u3001\u68c0\u7d22\u4e0a\u4e0b\u6587\u6216\u5199\u4f5c\u54c1\uff0c\u97f3\u9891\u64ad\u653e\u540e\u91ca\u653e\u3002"
+    }
+  ],
+  "entries": [
+    {
+      "entryId": "prose.chapter.generate",
+      "skillId": "prose.generate",
+      "categories": [
+        "chapter.content"
+      ],
+      "runContractBuilderId": "prose-generation-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "chapter-draft",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "chapters"
+      ],
+      "allowedCallers": [
+        "src/lib/generation/chapter-generation-node.ts"
+      ],
+      "reason": "\u6b63\u6587\u5148\u5f62\u6210 durable \u7ae0\u8282\u5019\u9009\uff0c\u4f5c\u8005\u786e\u8ba4\u540e\u5199\u5165 chapters\u3002"
+    },
+    {
+      "entryId": "prose.chapter.continue",
+      "skillId": "prose.continue",
+      "categories": [
+        "chapter.continue"
+      ],
+      "runContractBuilderId": "prose-generation-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "chapter-continuation-draft",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "chapters"
+      ],
+      "allowedCallers": [
+        "src/lib/generation/chapter-generation-node.ts"
+      ],
+      "reason": "\u7eed\u5199\u5148\u5f62\u6210 durable \u5019\u9009\uff0c\u4f5c\u8005\u786e\u8ba4\u540e\u5408\u5165\u7ae0\u8282\u3002"
+    },
+    {
+      "entryId": "prose.selection.polish",
+      "skillId": "prose.selection-edit",
+      "categories": [
+        "chapter.polish"
+      ],
+      "runContractBuilderId": "author-preview-selection-edit",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "auxiliary",
+      "candidateKind": "selection-polish-preview",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/editor/ChapterEditor.tsx"
+      ],
+      "reason": "\u6a21\u578b\u8f93\u51fa\u53ea\u8fdb\u5165\u5bf9\u7167\u9884\u89c8\uff1b\u4f5c\u8005\u5e94\u7528\u540e\u6309\u666e\u901a\u7f16\u8f91\u4fdd\u5b58\u3002"
+    },
+    {
+      "entryId": "prose.selection.expand",
+      "skillId": "prose.selection-edit",
+      "categories": [
+        "chapter.expand"
+      ],
+      "runContractBuilderId": "author-preview-selection-edit",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "auxiliary",
+      "candidateKind": "selection-expand-preview",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/editor/ChapterEditor.tsx"
+      ],
+      "reason": "\u6269\u5199\u53ea\u5f62\u6210\u5185\u5b58\u9884\u89c8\uff0c\u4e0d\u5728\u6a21\u578b\u8c03\u7528\u9636\u6bb5\u5199 Canon\u3002"
+    },
+    {
+      "entryId": "prose.selection.deai",
+      "skillId": "prose.selection-edit",
+      "categories": [
+        "chapter.deai"
+      ],
+      "runContractBuilderId": "author-preview-selection-edit",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "auxiliary",
+      "candidateKind": "selection-rewrite-preview",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/editor/ChapterEditor.tsx"
+      ],
+      "reason": "\u53bb AI \u5473\u7ed3\u679c\u5148\u9884\u89c8\uff0c\u8c03\u7528\u672c\u8eab\u4e0d\u5f97\u5199\u6b63\u5f0f\u6b63\u6587\u3002"
+    },
+    {
+      "entryId": "prose.chapter.memory",
+      "skillId": "prose.memory",
+      "categories": [
+        "chapter.memory"
+      ],
+      "runContractBuilderId": "chapter-post-adoption-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "chapter-memory-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "chapters"
+      ],
+      "allowedCallers": [
+        "src/components/editor/ChapterEditor.tsx",
+        "src/lib/prose/post-adoption-runner.ts"
+      ],
+      "reason": "\u7ae0\u8282\u6458\u8981\u548c\u4ea4\u63a5\u5148\u7ecf\u7ed3\u6784\u5316\u5019\u9009\u4e0e stale \u68c0\u67e5\uff0c\u518d\u539f\u5b50\u5199\u56de\u3002"
+    },
+    {
+      "entryId": "prose.chapter.organize",
+      "skillId": "prose.organize",
+      "categories": [
+        "chapter.organize"
+      ],
+      "runContractBuilderId": "chapter-post-adoption-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "chapter-organization-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "stateCards",
+        "temporalFacts",
+        "itemLedger",
+        "storyTimelineEvents",
+        "characterRelations",
+        "foreshadows",
+        "storylineProgress",
+        "storylineCrossings",
+        "storyArcs"
+      ],
+      "allowedCallers": [
+        "src/components/editor/ChapterEditor.tsx",
+        "src/lib/prose/post-adoption-runner.ts"
+      ],
+      "reason": "\u4e03\u57df\u6574\u7406\u7684\u5b9e\u9645\u5199\u96c6\u5408\u7531 Skill \u6d3e\u751f\u5e76\u9010\u57df\u786e\u8ba4\u3002"
+    },
+    {
+      "entryId": "prose.review.quality",
+      "skillId": "prose.quality-review",
+      "categories": [
+        "review.quality"
+      ],
+      "runContractBuilderId": "quality-review-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "auxiliary",
+      "candidateKind": "quality-review-report",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/prose/quality-transport.ts"
+      ],
+      "reason": "\u5168\u7ae0\u9605\u8bfb\u5efa\u8bae\u6301\u4e45\u4fdd\u5b58\u5b9e\u9645\u8bf7\u6c42\u3001\u8986\u76d6\u4e0e\u5f15\u6587\u8bc1\u636e\uff0c\u4fdd\u6301\u53ea\u8bfb\uff0c\u4e0d\u63d0\u4f9b\u8d28\u91cf\u5206\u6216 AI \u6982\u7387\u3002"
+    },
+    {
+      "entryId": "prose.review.anti-ai",
+      "skillId": "prose.quality-review",
+      "categories": [
+        "review.anti-ai"
+      ],
+      "runContractBuilderId": "quality-review-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "auxiliary",
+      "candidateKind": "anti-ai-review-report",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/prose/quality-transport.ts"
+      ],
+      "reason": "\u5168\u7ae0\u9605\u8bfb\u5efa\u8bae\u6301\u4e45\u4fdd\u5b58\u5b9e\u9645\u8bf7\u6c42\u3001\u8986\u76d6\u4e0e\u5f15\u6587\u8bc1\u636e\uff0c\u4fdd\u6301\u53ea\u8bfb\uff0c\u4e0d\u63d0\u4f9b\u8d28\u91cf\u5206\u6216 AI \u6982\u7387\u3002"
+    },
+    {
+      "entryId": "prose.review.readability",
+      "skillId": "prose.quality-review",
+      "categories": [
+        "review.readability"
+      ],
+      "runContractBuilderId": "quality-review-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "auxiliary",
+      "candidateKind": "readability-review-report",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/prose/quality-transport.ts"
+      ],
+      "reason": "\u5168\u7ae0\u9605\u8bfb\u5efa\u8bae\u6301\u4e45\u4fdd\u5b58\u5b9e\u9645\u8bf7\u6c42\u3001\u8986\u76d6\u4e0e\u5f15\u6587\u8bc1\u636e\uff0c\u4fdd\u6301\u53ea\u8bfb\uff0c\u4e0d\u63d0\u4f9b\u8d28\u91cf\u5206\u6216 AI \u6982\u7387\u3002"
+    },
+    {
+      "entryId": "prose.chapter.quality-revise",
+      "skillId": "prose.quality-revise",
+      "categories": [
+        "review.revise"
+      ],
+      "runContractBuilderId": "quality-revision-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "prose-generation-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "chapters"
+      ],
+      "allowedCallers": [
+        "src/lib/prose/quality-transport.ts"
+      ],
+      "reason": "\u4f5c\u8005\u9009\u62e9\u95ee\u9898\u5e76\u51bb\u7ed3\u5141\u8bb8\u8303\u56f4\uff0c\u4e00\u6b21\u4fee\u8ba2\u548c\u4e00\u6b21\u590d\u6838\u540e\u4ecd\u7ecf\u540c\u4e00\u6b63\u6587\u5019\u9009\u91c7\u7eb3\u3002"
+    },
+    {
+      "entryId": "prose.review.recheck",
+      "skillId": "prose.quality-recheck",
+      "categories": [
+        "review.quality"
+      ],
+      "runContractBuilderId": "quality-revision-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "auxiliary",
+      "candidateKind": "quality-revision-recheck",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/prose/quality-transport.ts"
+      ],
+      "reason": "\u53ea\u8bfb\u590d\u6838\u9009\u4e2d\u95ee\u9898\u53ca\u65b0\u95ee\u9898\uff0c\u4e0d\u4ea7\u751f\u7b2c\u4e8c\u8f6e\u91cd\u5199\u3002"
+    },
+    {
+      "entryId": "prose.review.consistency",
+      "skillId": "prose.review",
+      "categories": [
+        "review.consistency.fast",
+        "review.consistency.deep"
+      ],
+      "runContractBuilderId": "prose-semantic-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "auxiliary",
+      "candidateKind": "consistency-audit-report",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/editor/ReviewPanel.tsx"
+      ],
+      "reason": "\u4e00\u81f4\u6027\u5ba1\u8ba1\u6709 durable \u8bc1\u636e\u4f46\u4fdd\u6301\u53ea\u8bfb\u3002"
+    },
+    {
+      "entryId": "world.map.concept",
+      "skillId": "world-origin.map-config",
+      "categories": [
+        "geography.concept-map"
+      ],
+      "runContractBuilderId": "ephemeral-visual",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "auxiliary",
+      "candidateKind": "concept-map-svg",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/geography/GeographyPanel.tsx"
+      ],
+      "reason": "\u6982\u5ff5\u5730\u56fe\u4ec5\u8fdb\u5165\u5f53\u524d UI SVG\u3002"
+    },
+    {
+      "entryId": "outline.workshop.scan",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.workshop.scan"
+      ],
+      "runContractBuilderId": "outline-workshop-generation-node",
+      "executionBoundary": "generation-node",
+      "entryKind": "formal",
+      "candidateKind": "outline-workshop-scan",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/outline/workshop.ts"
+      ],
+      "reason": "\u5de5\u574a\u626b\u63cf\u662f\u6700\u7ec8\u7ae0\u7eb2\u5019\u9009\u7684\u4e2d\u95f4\u4ea7\u7269\u3002"
+    },
+    {
+      "entryId": "outline.workshop.motivation",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.workshop.motivation"
+      ],
+      "runContractBuilderId": "outline-workshop-generation-node",
+      "executionBoundary": "generation-node",
+      "entryKind": "formal",
+      "candidateKind": "outline-workshop-motivation",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/outline/workshop.ts"
+      ],
+      "reason": "\u52a8\u673a\u5206\u6790\u662f\u4e2d\u95f4\u5019\u9009\uff0c\u4e0d\u76f4\u63a5\u5199\u8868\u3002"
+    },
+    {
+      "entryId": "outline.workshop.collision",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.workshop.collision"
+      ],
+      "runContractBuilderId": "outline-workshop-generation-node",
+      "executionBoundary": "generation-node",
+      "entryKind": "formal",
+      "candidateKind": "outline-workshop-collision",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/outline/workshop.ts"
+      ],
+      "reason": "\u51b2\u7a81\u5206\u6790\u662f\u4e2d\u95f4\u5019\u9009\uff0c\u4e0d\u76f4\u63a5\u5199\u8868\u3002"
+    },
+    {
+      "entryId": "outline.workshop.quality",
+      "skillId": "prose.review",
+      "categories": [
+        "review.outline-workshop"
+      ],
+      "runContractBuilderId": "outline-workshop-generation-node",
+      "executionBoundary": "read-only",
+      "entryKind": "auxiliary",
+      "candidateKind": "outline-workshop-quality-report",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/outline/workshop.ts"
+      ],
+      "reason": "\u5de5\u574a\u8d28\u91cf\u95e8\u53ea\u8f93\u51fa\u62a5\u544a\u3002"
+    },
+    {
+      "entryId": "outline.workshop.scenes",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.workshop.scenes"
+      ],
+      "runContractBuilderId": "outline-workshop-generation-node",
+      "executionBoundary": "generation-node",
+      "entryKind": "formal",
+      "candidateKind": "outline-workshop-scenes",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "outlineNodes"
+      ],
+      "allowedCallers": [
+        "src/lib/outline/workshop.ts"
+      ],
+      "reason": "\u6700\u7ec8\u573a\u666f\u7ae0\u7eb2\u5019\u9009\u53ef\u7531\u4f5c\u8005\u786e\u8ba4\u5199\u5165 outlineNodes\u3002"
+    },
+    {
+      "entryId": "outline.volume.generate",
+      "skillId": "outline.volumes",
+      "categories": [
+        "outline.volume"
+      ],
+      "runContractBuilderId": "outline-batch-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "volume-outline-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "outlineNodes"
+      ],
+      "allowedCallers": [
+        "src/lib/outline/generation-node.ts"
+      ],
+      "reason": "\u5377\u7eb2\u901a\u8fc7 durable \u6279\u6b21\u5019\u9009\u4e0e\u786e\u8ba4\u91c7\u7eb3\u3002"
+    },
+    {
+      "entryId": "outline.chapter.generate",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.chapter"
+      ],
+      "runContractBuilderId": "outline-batch-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "chapter-outline-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "outlineNodes"
+      ],
+      "allowedCallers": [
+        "src/lib/outline/generation-node.ts",
+        "src/lib/outline/chunked-session.ts"
+      ],
+      "reason": "\u7ae0\u7eb2\u901a\u8fc7 durable \u6279\u6b21\u5019\u9009\u4e0e\u786e\u8ba4\u91c7\u7eb3\u3002"
+    },
+    {
+      "entryId": "outline.chapter.review",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.review"
+      ],
+      "runContractBuilderId": "outline-review-read-only",
+      "executionBoundary": "read-only",
+      "entryKind": "auxiliary",
+      "candidateKind": "outline-review-report",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/outline/chapter-reviewer.ts"
+      ],
+      "reason": "\u7ae0\u7eb2\u8bca\u65ad\u53ea\u8fd4\u56de\u95ee\u9898\u4e0e\u5efa\u8bae\uff0c\u4e0d\u76f4\u63a5\u5199\u5165\u5927\u7eb2\u3002"
+    },
+    {
+      "entryId": "outline.chapter.rewrite",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.rewrite"
+      ],
+      "runContractBuilderId": "outline-rewrite-authoring-draft",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "formal",
+      "candidateKind": "outline-rewrite-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "outlineNodes"
+      ],
+      "allowedCallers": [
+        "src/lib/outline/chapter-reviewer.ts"
+      ],
+      "reason": "\u7ae0\u7eb2\u6700\u5c0f\u6539\u5199\u5148\u505c\u7559\u4e3a\u4f5c\u8005\u8349\u7a3f\u5019\u9009\uff0c\u786e\u8ba4\u540e\u624d\u53ef\u5199\u5165 outlineNodes\u3002"
+    },
+    {
+      "entryId": "outline.chunked.generate",
+      "skillId": "outline.chapters",
+      "categories": [
+        "outline.chunked-direction",
+        "outline.chunked-chapters"
+      ],
+      "runContractBuilderId": "outline-chunked-authoring-draft",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "formal",
+      "candidateKind": "chunked-outline-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "outlineNodes"
+      ],
+      "allowedCallers": [
+        "src/lib/outline/chunked-generator.ts"
+      ],
+      "reason": "\u5206\u5757\u7ae0\u7eb2\u4e0e\u5267\u60c5\u65b9\u5411\u5747\u5148\u751f\u6210\u53ef\u5ba1\u9605\u8349\u7a3f\uff0c\u4f5c\u8005\u9009\u62e9\u5e76\u786e\u8ba4\u540e\u624d\u5199\u5165\u5927\u7eb2\u3002"
+    },
+    {
+      "entryId": "outline.detail.scene",
+      "skillId": "outline.details",
+      "categories": [
+        "detail.scene"
+      ],
+      "runContractBuilderId": "detailed-outline-generation-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "detailed-outline-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "detailedOutlines"
+      ],
+      "allowedCallers": [
+        "src/components/outline/useDetailedOutlineGenerationController.ts"
+      ],
+      "reason": "\u5355\u7ae0\u573a\u666f\u7ec6\u7eb2\u8fdb\u5165 durable \u5019\u9009\u5e76\u663e\u5f0f\u91c7\u7eb3\u3002"
+    },
+    {
+      "entryId": "outline.detail.enhance",
+      "skillId": "outline.details",
+      "categories": [
+        "detail.enhance"
+      ],
+      "runContractBuilderId": "detailed-outline-generation-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "detailed-outline-enhancement",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "detailedOutlines"
+      ],
+      "allowedCallers": [
+        "src/components/outline/useDetailedOutlineGenerationController.ts",
+        "src/lib/agent/detailed-outline-authoring.ts"
+      ],
+      "reason": "\u7ec6\u7eb2\u589e\u5f3a\u8fdb\u5165\u540c\u4e00 durable \u5019\u9009\u4e0e\u91c7\u7eb3\u8fb9\u754c\u3002"
+    },
+    {
+      "entryId": "outline.detail.batch",
+      "skillId": "outline.details",
+      "categories": [
+        "detail.enhance"
+      ],
+      "runContractBuilderId": "detailed-outline-batch-durable",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "detailed-outline-batch-candidate",
+      "adoptAllowed": true,
+      "adoptionTargets": [
+        "detailedOutlines"
+      ],
+      "allowedCallers": [
+        "src/lib/ai/batch-detail-runner.ts"
+      ],
+      "reason": "\u6279\u91cf\u7ec6\u7eb2\u9010\u7ae0\u590d\u7528\u540c\u4e00 required Gateway\u3001durable \u5019\u9009\u4e0e\u4f5c\u8005\u786e\u8ba4\u91c7\u7eb3\u8fb9\u754c\u3002"
+    },
+    {
+      "entryId": "world.scene.verify",
+      "skillId": "world-origin.review",
+      "categories": [
+        "scene.verify"
+      ],
+      "runContractBuilderId": "read-only-review",
+      "executionBoundary": "read-only",
+      "entryKind": "auxiliary",
+      "candidateKind": "scene-verification-report",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/scene/SceneVerifyPanel.tsx"
+      ],
+      "reason": "\u573a\u666f\u8003\u8bc1\u53ea\u5c55\u793a\u5efa\u8bae\u3002"
+    },
+    {
+      "entryId": "prompt.examples.generate",
+      "skillId": "inspiration.review",
+      "categories": [
+        "prompt.examples"
+      ],
+      "runContractBuilderId": "prompt-authoring-draft",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "auxiliary",
+      "candidateKind": "prompt-example-draft",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/settings/prompt/PromptExamplesEditor.tsx"
+      ],
+      "reason": "\u793a\u4f8b\u53ea\u8fdb\u5165\u672a\u4fdd\u5b58\u6a21\u677f\u8349\u7a3f\u3002"
+    },
+    {
+      "entryId": "prompt.workflow.step",
+      "skillId": "inspiration.review",
+      "categories": [
+        "*"
+      ],
+      "runContractBuilderId": "experimental-prompt-workflow-node",
+      "executionBoundary": "experimental",
+      "entryKind": "experimental",
+      "candidateKind": "prompt-workflow-step-draft",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/lib/generation/workflow-generation-node.ts"
+      ],
+      "reason": "\u81ea\u7531 PromptWorkflow \u7684\u52a8\u6001 category \u88ab\u9650\u5236\u5728\u5b9e\u9a8c\u6027\u5185\u5b58\u8349\u7a3f\uff1b\u4fdd\u5b58\u662f\u72ec\u7acb\u4f5c\u8005\u52a8\u4f5c\u3002"
+    },
+    {
+      "entryId": "style.calibration.preview",
+      "skillId": "prose.style-learn",
+      "categories": [
+        "style.calibrate"
+      ],
+      "runContractBuilderId": "style-authoring-draft",
+      "executionBoundary": "authoring-draft",
+      "entryKind": "auxiliary",
+      "candidateKind": "style-calibration-preview",
+      "adoptAllowed": false,
+      "allowedCallers": [
+        "src/components/style/StyleCalibrationPanel.tsx"
+      ],
+      "reason": "\u6821\u51c6\u7a3f\u7559\u5728\u7ec4\u4ef6\u5185\u5b58\uff0c\u53cd\u9988\u4e0e\u6837\u672c\u4fdd\u5b58\u662f\u72ec\u7acb\u4f5c\u8005\u52a8\u4f5c\u3002"
+    }
+  ]
+}

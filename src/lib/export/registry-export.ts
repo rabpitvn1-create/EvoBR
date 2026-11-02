@@ -1,0 +1,553 @@
+
+
+
+/**
+ * 注册表派生的项目导出引擎(AUDIT-1)
+ *
+ * 取代 json-export.ts 中 580 行手写枚举:遍历 PROJECT_TABLES 中 exportable 的表,
+ * 按其元数据(worldScoped / tree / exportRemap / exportIdField / exportRefRemap)自动
+ * 把库内记录转成可移植的 ProjectExportData——加新表只需在注册表登记一行,自动进出导出。
+ *
+ * 输出只遵循当前便携备份契约；不存在历史格式分支。
+ */
+import Dexie from 'dexie'
+
+import { db } from '../db/schema'
+import { PROJECT_TABLES, REGISTRY_BY_NAME } from '../registry/project-tables'
+import { parseWorldPortals, remapWorldPortalTargets } from '../utils/world-portals'
+import type { TableSpec } from '../registry/types'
+import type { ProjectExportData } from './json-export'
+import { redactAuthoringSecrets } from '../node-authoring/contracts'
+import { resolveWorkspaceOwnership } from '../workspace/ownership'
+import { portableizeAgentRunLedgerExportV1 } from '../agent/run/ledger-portability'
+import { assertAgentRunArtifactRecordIntegrityV1 } from '../memory/artifact-record'
+
+
+import { remapNarrativeDomainFieldV1 } from '../narrative-domain/references'
+import { assertNarrativeDomainReferenceRowsV1 } from '../narrative-domain/integrity'
+import { assertNarrativeLineageRowsV1 } from '../world-engine/narrative-lineage-lifecycle'
+
+import { mapNarrativeDomainReferencesV1 } from '../narrative-domain/codec'
+import { narrativeDomainReferenceTargetV1 } from '../narrative-domain/references'
+import { canonicalNarrativeJsonV1, compareUnicodeCodePointsV1 } from '../narrative-domain/json'
+import { isPortableResourceUidV1 } from '../context-gateway/resource-uid'
+
+/** 当前完整便携备份契约。 */
+export const CURRENT_EXPORT_VERSION = 17
+
+export interface StrictProjectExportSnapshot {
+  data: ProjectExportData
+  exportIds: ReadonlyMap<string, ReadonlyMap<number, number>>
+}
+
+/** The release compiler supplies an already captured semantic scope. Reuse
+ * the backup encoder without reading or materializing product/media tables.
+ * Unlike a best-effort backup, an explicit release selection may not silently
+ * drop a row or turn a live reference into a tombstone. */
+export function deriveRegisteredSemanticRowsV1(input: {
+  rows: ReadonlyMap<string, readonly Record<string, unknown>[]>
+  worldId: number
+  workId: number
+}): { records: Record<string, Record<string, unknown>[]>; exportIds: Map<string, Map<number, number>> } {
+  assertNarrativeDomainReferenceRowsV1(new Map([
+    ...input.rows,
+    ['worlds', [{ id: input.worldId }]],
+    ['works', [{ id: input.workId, worldId: input.worldId }]],
+  ]), 'local')
+  const idMaps = new Map<string, Map<number, number>>([
+    ['worlds', new Map([[input.worldId, 0]])], ['works', new Map([[input.workId, 0]])],
+  ])
+  const ordered = new Map<string, Record<string, unknown>[]>()
+  for (const [table, rows] of input.rows) {
+    const spec = REGISTRY_BY_NAME.get(table)
+    if (!spec?.worldSemantic || !spec.resourceIdentity || !spec.exportable) throw new Error(`[semanticExport] ${table} 未登记为可发布语义`)
+    const identity = spec.resourceIdentity
+    const seen = new Set<string>(), ids = new Map<number, number>()
+    for (const row of rows) {
+      const uid = row[identity.field]
+      if (!isPortableResourceUidV1(uid, identity.resourceKind) || seen.has(uid.toLowerCase())
+        || !Number.isSafeInteger(row.id) || (row.id as number) <= 0) throw new Error(`[semanticExport] ${table} 稳定身份缺失或重复`)
+      seen.add(uid.toLowerCase())
+    }
+    const sorted = [...rows].sort((a, b) => compareUnicodeCodePointsV1(String(a[identity.field]), String(b[identity.field])))
+    sorted.forEach((row, index) => {
+      if (ids.has(row.id as number)) throw new Error(`[semanticExport] ${table} 本地坐标重复`)
+      ids.set(row.id as number, index)
+    })
+    ordered.set(table, sorted); idMaps.set(table, ids)
+  }
+  const records: Record<string, Record<string, unknown>[]> = {}
+  const exactArray = (value: unknown, label: string): unknown[] => {
+    if (value === undefined || value === null || value === '') return []
+    if (typeof value === 'string') {
+      try { value = JSON.parse(value) } catch { throw new Error(`[semanticExport] ${label} 不是合法数组`) }
+    }
+    if (!Array.isArray(value)) throw new Error(`[semanticExport] ${label} 不是合法数组`)
+    return value
+  }
+  const cleanOptionalFields = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(cleanOptionalFields)
+    if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+      return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined).map(([key, item]) => [key, cleanOptionalFields(item)]))
+    }
+    return value
+  }
+  for (const [table, rows] of ordered) {
+    const spec = REGISTRY_BY_NAME.get(table)!
+    records[table] = rows.map((row, index) => {
+      for (const ref of spec.exportRemap ?? []) {
+        const id = row[ref.field]
+        if (id == null && (ref.onUnmapped === 'require' || ref.onUnmapped === 'drop')) throw new Error(`[semanticExport] ${table}.${ref.field} 必填引用缺失`)
+        if (id != null && !idMaps.get(ref.selfTree ? table : ref.remapVia)?.has(id as number)) {
+          throw new Error(`[semanticExport] ${table}.${ref.field} 引用不在封存范围内`)
+        }
+      }
+      for (const ref of spec.exportRefRemap ?? []) {
+        if (ref.kind === 'narrative-source-refs-v1') {
+          if (row[ref.field] !== undefined) mapNarrativeDomainReferencesV1(ref.field, row[ref.field], source => {
+            const target = narrativeDomainReferenceTargetV1(source)
+            if (target.id !== null && !idMaps.get(target.table)?.has(target.id)) throw new Error(`[semanticExport] ${table}.${ref.field} 证据或依赖未选入`)
+            return source
+          })
+          continue
+        }
+        const requireTarget = (id: unknown) => {
+          if (!Number.isSafeInteger(id) || !idMaps.get(ref.remapVia)?.has(id as number)) throw new Error(`[semanticExport] ${table}.${ref.field} 嵌套引用未选入`)
+        }
+        const items = exactArray(row[ref.field], `${table}.${ref.field}`)
+        if (ref.kind === 'id-array') items.forEach(requireTarget)
+        else if (ref.kind === 'scene-character-ids') for (const scene of items) {
+          if (!scene || typeof scene !== 'object' || Array.isArray(scene)) throw new Error(`[semanticExport] ${table}.${ref.field} 场景无效`)
+          exactArray((scene as Record<string, unknown>).characterIds, `${table}.${ref.field}.characterIds`).forEach(requireTarget)
+        }
+        else if (ref.kind === 'portals') {
+          const portals = parseWorldPortals(row[ref.field] as string | undefined)
+          if (items.length !== portals.length) throw new Error(`[semanticExport] ${table}.${ref.field} 通道无效`)
+          portals.forEach(portal => requireTarget(portal.targetWorldId))
+        } else if (row[ref.field] !== undefined) throw new Error(`[semanticExport] ${table}.${ref.field} 需要新的语义导出版本`)
+      }
+      const portable = toExportRow(spec, row, index, idMaps, true)
+      if (!portable) throw new Error(`[semanticExport] ${table} 不能丢弃已选来源`)
+      for (const ref of spec.exportRefRemap ?? []) if (ref.kind === 'scene-character-ids' && Array.isArray(portable[ref.field])) {
+        portable[ref.field] = portable[ref.field].map((scene: Record<string, unknown>) => ({ ...scene, characterIds: [] }))
+      }
+      const cleaned = cleanOptionalFields(portable) as Record<string, unknown>
+      canonicalNarrativeJsonV1(cleaned)
+      return cleaned
+    })
+  }
+  return { records, exportIds: idMaps }
+}
+
+interface CapturedProjectExportSnapshot extends StrictProjectExportSnapshot {
+  integrityRows: ReadonlyMap<string, readonly any[]>
+}
+
+
+/** Fail closed before a corrupt runtime tree or derived checkpoint leaves IndexedDB. */
+
+
+/** 取一张 exportable 表的库内记录(项目级按 projectId;direct-child 经 projectResolver) */
+async function queryRows(spec: TableSpec, projectId: number): Promise<any[]> {
+  if (spec.owner === 'project') {
+    const coll = (db as any)[spec.name].where('projectId').equals(projectId)
+    return spec.exportOrderBy ? await coll.sortBy(spec.exportOrderBy) : await coll.toArray()
+  }
+  // direct-child / indirect:用 projectResolver 拿父键,再用关联字段 anyOf 查
+  if (!spec.projectResolver) return []
+  const parentIds = await spec.projectResolver(projectId)
+  if (!parentIds.length) return []
+  const linkRemap = (spec.exportRemap ?? []).find(rm => REGISTRY_BY_NAME.get(rm.remapVia)?.owner === 'project')
+  if (!linkRemap) return []
+  return await (db as any)[spec.name].where(linkRemap.field).anyOf(parentIds).toArray()
+}
+
+/** 把一行库记录转成导出对象(剥 id/projectId、外键→导出序号、写 _exportId、JSON 引用重映射) */
+function toExportRow(
+  spec: TableSpec,
+  row: any,
+  index: number,
+  idMaps: Map<string, Map<number, number>>,
+  strictOwners = false,
+): any | null {
+  const obj: any = { ...row }
+  delete obj.id
+  if ('projectId' in obj) delete obj.projectId
+
+  for (const rm of spec.exportRemap ?? []) {
+    const val = obj[rm.field]
+    delete obj[rm.field]
+    const targetMap = rm.selfTree ? idMaps.get(spec.name) : idMaps.get(rm.remapVia)
+    let mapped: number | null = null
+    if (val != null) {
+      const got = targetMap?.get(val)
+      mapped = got ?? null
+      if (got == null && rm.onUnmapped === 'drop') return null // 孤儿行丢弃
+    }
+    obj[rm.exportAs] = mapped
+  }
+
+  if (spec.exportIdField) obj._exportId = index
+
+  for (const rr of spec.exportRefRemap ?? []) {
+    if (rr.kind === 'narrative-source-refs-v1') {
+      if (Object.prototype.hasOwnProperty.call(obj, rr.field)) {
+        obj[rr.exportAs] = remapNarrativeDomainFieldV1(rr.field, obj[rr.field], 'export', idMaps)
+        delete obj[rr.field]
+      }
+    } else if (rr.kind === 'portals') {
+      const map = idMaps.get(rr.remapVia)
+      obj[rr.field] = remapWorldPortalTargets(obj[rr.field], (targetId: number) => map?.get(targetId))
+    } else if (rr.kind === 'id-array') {
+      const map = idMaps.get(rr.remapVia)
+      const raw = parseIdArray(obj[rr.field])
+      const mapped = raw.map(id => map?.get(id))
+      if (rr.onUnmapped === 'require' && mapped.some(id => id == null)) {
+        throw new Error(`[deriveExport] ${spec.name}.${rr.field} 缺少必填引用映射`)
+      }
+      obj[rr.exportAs] = mapped.filter((id): id is number => id != null)
+      // Portable shadow indexes are authoritative; local numeric IDs must not
+      // leak into or destabilize a later restore.
+      if (strictOwners) delete obj[rr.field]
+    } else if (rr.kind === 'scene-character-ids') {
+      const map = idMaps.get(rr.remapVia)
+      obj[rr.exportAs] = Array.isArray(obj[rr.field])
+        ? obj[rr.field].map((scene: any) => Array.isArray(scene?.characterIds)
+          ? scene.characterIds.map((id: unknown) => typeof id === 'number' ? map?.get(id) : undefined).filter((id: unknown): id is number => typeof id === 'number')
+          : [])
+        : []
+    } else if (rr.kind === 'object-array-id') {
+      const map = idMaps.get(rr.remapVia)
+      const items = parseObjectArray(obj[rr.field])
+      obj[rr.exportAs] = items.map(item => {
+        const id = item[rr.itemField]
+        return typeof id === 'number' ? (map?.get(id) ?? null) : null
+      })
+      if (strictOwners) {
+        const sanitized = items.map(item => rr.itemField in item ? { ...item, [rr.itemField]: null } : item)
+        obj[rr.field] = rr.storage === 'json-string' ? JSON.stringify(sanitized) : sanitized
+      }
+    } else if (rr.kind === 'json-id-paths') {
+      obj[rr.exportAs] = remapJsonIdPathsForExport(
+        obj[rr.field],
+        rr.paths,
+        idMaps.get(rr.remapVia),
+        rr.onUnmapped ?? 'null',
+        `${spec.name}.${rr.field}`,
+        rr.keyedMaps,
+      )
+      // The portable shadow is authoritative. Never leak embedded local IDs
+      // into either ordinary or strict backups.
+      delete obj[rr.field]
+    }
+  }
+
+  if (strictOwners && spec.name !== 'worlds' && spec.name !== 'works') {
+    const locator = spec.domainOwner?.locator
+    if (locator?.kind === 'field' && (locator.owner === 'world' || locator.owner === 'work')) {
+      const ownerMap = idMaps.get(locator.owner === 'world' ? 'worlds' : 'works')
+      const portableId = ownerMap?.get(row[locator.field])
+      if (portableId == null) throw new Error(`[strictExport] ${spec.name}.${locator.field} 缺失或越界`)
+      obj[locator.owner === 'world' ? '_worldOwnerExportId' : '_workOwnerExportId'] = portableId
+      delete obj.worldId
+      delete obj.workId
+    } else if (locator?.kind === 'exclusive-fields') {
+      const hasWorld = row[locator.worldField] != null
+      const hasWork = row[locator.workField] != null
+      if (hasWorld === hasWork) throw new Error(`[strictExport] ${spec.name} 必须且只能有一个 owner`)
+      const kind = hasWorld ? 'world' : 'work'
+      const portableId = idMaps.get(kind === 'world' ? 'worlds' : 'works')
+        ?.get(row[hasWorld ? locator.worldField : locator.workField])
+      if (portableId == null) throw new Error(`[strictExport] ${spec.name} owner 缺失或越界`)
+      obj[kind === 'world' ? '_worldOwnerExportId' : '_workOwnerExportId'] = portableId
+      delete obj.worldId
+      delete obj.workId
+    } else if (locator?.kind === 'exclusive-work-instance') {
+      const hasWork = row[locator.workField] != null
+      const hasInstance = row[locator.instanceField] != null
+      if (hasWork === hasInstance) throw new Error(`[strictExport] ${spec.name} 必须且只能有一个 Work/Instance owner`)
+      if (hasWork) {
+        const portableId = idMaps.get('works')?.get(row[locator.workField])
+        if (portableId == null) throw new Error(`[strictExport] ${spec.name} Work owner 缺失或越界`)
+        obj._workOwnerExportId = portableId
+      } else if (!Number.isInteger(obj._productRuntimeSessionExportId)) {
+        throw new Error(`[strictExport] ${spec.name} Instance owner 缺失或越界`)
+      } else {
+        obj._instanceOwnerExportId = obj._productRuntimeSessionExportId
+      }
+      delete obj[locator.workField]
+      delete obj[locator.instanceField]
+    }
+  }
+
+  return spec.name === 'nodeFlows' || spec.name === 'nodeRuns'
+    ? redactAuthoringSecrets(obj)
+    : obj
+}
+
+function remapJsonIdPathsForExport(
+  value: unknown,
+  paths: readonly string[],
+  idMap: Map<number, number> | undefined,
+  onUnmapped: 'require' | 'require-if-present' | 'null',
+  label: string,
+  keyedMaps?: readonly { path: string; keyFields: readonly string[]; separator: string }[],
+): string | null {
+  if (value == null) return null
+  let parsed: unknown
+  try { parsed = typeof value === 'string' ? JSON.parse(value) : structuredClone(value) } catch {
+    throw new Error(`[deriveExport] ${label} 不是合法 JSON`)
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`[deriveExport] ${label} 必须是 JSON 对象`)
+  }
+  for (const path of paths) {
+    const parts = path.split('.').filter(Boolean)
+    const field = parts[parts.length - 1]
+    if (!field) continue
+    const owners: Array<Record<string, unknown>> = []
+    const visit = (value: unknown, index: number): void => {
+      if (!value || typeof value !== 'object') {
+        if (onUnmapped === 'require') throw new Error(`[deriveExport] ${label}.${path} 缺失`)
+        return
+      }
+      const part = parts[index]
+      if (Array.isArray(value)) {
+        if (part === '*') {
+          for (const child of value) visit(child, index + 1)
+          return
+        }
+        if (onUnmapped === 'require') throw new Error(`[deriveExport] ${label}.${path} 缺失`)
+        return
+      }
+      const owner = value as Record<string, unknown>
+      if (index >= parts.length - 1) {
+        owners.push(owner)
+        return
+      }
+      if (part === '*') {
+        for (const child of Object.values(owner)) visit(child, index + 1)
+        return
+      }
+      if (!(part in owner)) {
+        if (onUnmapped === 'require') throw new Error(`[deriveExport] ${label}.${path} 缺失`)
+        return
+      }
+      visit(owner[part], index + 1)
+    }
+    visit(parsed, 0)
+    for (const owner of owners) {
+      if (!(field in owner)) {
+        if (onUnmapped === 'require') throw new Error(`[deriveExport] ${label}.${path} 缺失`)
+        if (onUnmapped === 'require-if-present') continue
+      }
+      const localId = owner[field]
+      if (localId == null) {
+        if (onUnmapped !== 'null') {
+          throw new Error(`[deriveExport] ${label}.${path} 缺少便携映射`)
+        }
+        owner[field] = null
+        continue
+      }
+      const portableId = typeof localId === 'number' ? idMap?.get(localId) : undefined
+      if (portableId == null && onUnmapped !== 'null') {
+        throw new Error(`[deriveExport] ${label}.${path} 缺少便携映射`)
+      }
+      owner[field] = portableId ?? null
+    }
+  }
+  for (const keyed of keyedMaps ?? []) {
+    const parts = keyed.path.split('.').filter(Boolean)
+    let owner = parsed as Record<string, unknown>
+    let missing = false
+    for (const part of parts.slice(0, -1)) {
+      const child = owner[part]
+      if (!child || typeof child !== 'object' || Array.isArray(child)) {
+        if (onUnmapped === 'require-if-present') {
+          missing = true
+          break
+        }
+        throw new Error(`[deriveExport] ${label}.${keyed.path} keyed map 缺失`)
+      }
+      owner = child as Record<string, unknown>
+    }
+    if (missing) continue
+    const field = parts[parts.length - 1]
+    if (field && !(field in owner) && onUnmapped === 'require-if-present') continue
+    const current = field ? owner[field] : undefined
+    if (!field || !current || typeof current !== 'object' || Array.isArray(current)) {
+      throw new Error(`[deriveExport] ${label}.${keyed.path} keyed map 无效`)
+    }
+    const rebuilt: Record<string, unknown> = {}
+    for (const value of Object.values(current as Record<string, unknown>)) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error(`[deriveExport] ${label}.${keyed.path} keyed map value 无效`)
+      }
+      const row = value as Record<string, unknown>
+      const values = keyed.keyFields.map(key => row[key])
+      if (values.some(candidate => typeof candidate !== 'string' && typeof candidate !== 'number')) {
+        throw new Error(`[deriveExport] ${label}.${keyed.path} keyed map identity 无效`)
+      }
+      const key = values.map(String).join(keyed.separator)
+      if (!key || key in rebuilt) {
+        throw new Error(`[deriveExport] ${label}.${keyed.path} keyed map identity 重复`)
+      }
+      rebuilt[key] = value
+    }
+    owner[field] = rebuilt
+  }
+  return JSON.stringify(parsed)
+}
+
+function parseObjectArray(value: unknown): Array<Record<string, unknown>> {
+  let parsed = value
+  if (typeof value === 'string') {
+    try { parsed = JSON.parse(value) } catch { return [] }
+  }
+  return Array.isArray(parsed)
+    ? parsed.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
+    : []
+}
+
+function parseIdArray(value: unknown): number[] {
+  if (Array.isArray(value)) return value.filter((id): id is number => typeof id === 'number')
+  if (typeof value !== 'string') return []
+  try {
+    const parsed: unknown = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed.filter((id): id is number => typeof id === 'number') : []
+  } catch {
+    return []
+  }
+}
+
+/** 派生当前架构的完整、严格便携备份。 */
+export async function deriveExportProjectJSON(projectId: number): Promise<ProjectExportData> {
+  return deriveStrictExportProjectJSON(projectId)
+}
+
+async function captureProjectExportInTransaction(
+  projectId: number,
+  version: number,
+  strictOwners: boolean,
+): Promise<CapturedProjectExportSnapshot> {
+  const project = await db.projects.get(projectId)
+  if (!project) throw new Error('项目不存在')
+
+  const specs = PROJECT_TABLES.filter(s => s.exportable && s.name !== 'projects')
+
+  // 第一遍:查询每张表 + 建 dbId → 导出序号 映射
+  const rowsByTable = new Map<string, any[]>()
+  const idMaps = new Map<string, Map<number, number>>()
+  // Schedule every registered read before awaiting. With 100+ tables, a
+  // sequential chain can leave IndexedDB without a pending request between
+  // empty-table resolutions and let the browser auto-commit the snapshot.
+  const capturedRows = await Promise.all(specs.map(async spec => ({
+    spec,
+    rows: await queryRows(spec, projectId),
+  })))
+  for (const { spec, rows } of capturedRows) {
+    rowsByTable.set(spec.name, rows)
+    const idMap = new Map<number, number>()
+    rows.forEach((r, i) => { if (r.id != null) idMap.set(r.id, i) })
+    idMaps.set(spec.name, idMap)
+  }
+  assertNarrativeDomainReferenceRowsV1(rowsByTable, 'local')
+  await Dexie.waitFor(assertNarrativeLineageRowsV1(rowsByTable, 'local'))
+  // 第二遍:逐行转导出对象
+  const projectSpec = REGISTRY_BY_NAME.get('projects')
+  if (!projectSpec) throw new Error('[deriveExport] PROJECT_TABLES 缺少 projects 根表')
+  const projectData = toExportRow(projectSpec, project, 0, idMaps, strictOwners)
+  const result: any = {
+    version,
+    exportedAt: Date.now(),
+    project: projectData,
+  }
+  for (const spec of specs) {
+    const rows = rowsByTable.get(spec.name)!
+    const out: any[] = []
+    rows.forEach((row, i) => {
+      const exported = toExportRow(spec, row, i, idMaps, strictOwners)
+      if (exported != null) out.push(exported)
+    })
+    result[spec.name] = out
+  }
+
+  return { data: result as ProjectExportData, exportIds: idMaps, integrityRows: rowsByTable }
+}
+
+async function captureProjectExport(projectId: number, version: number, strictOwners: boolean): Promise<CapturedProjectExportSnapshot> {
+  const tables = [...new Set(PROJECT_TABLES.filter(spec => spec.exportable).map(spec => spec.table))]
+  const captured = await db.transaction(
+    'r',
+    tables,
+    () => captureProjectExportInTransaction(projectId, version, strictOwners),
+  )
+  // Dynamic Creator-release validators and WebCrypto run against the immutable
+  // rows captured by the read transaction. Keeping them outside IndexedDB
+  // avoids both premature auto-commit and an artificial Dexie.waitFor lock.
+
+  return captured
+}
+
+async function portableizeSnapshot(snapshot: CapturedProjectExportSnapshot, options: { freezeContextEvidence?: boolean } = {}): Promise<StrictProjectExportSnapshot> {
+
+  if (PROJECT_TABLES.some(spec => spec.portableData?.kind === 'agent-run-root')) {
+    const portableLedger = portableizeAgentRunLedgerExportV1(snapshot.data, snapshot.exportIds, options)
+    if (Dexie.currentTransaction) await Dexie.waitFor(portableLedger)
+    else await portableLedger
+  }
+  const portable = snapshot.data as unknown as Record<string, unknown>
+  for (const spec of PROJECT_TABLES) { if (spec.portableData?.kind !== 'exact-run-artifact') continue; const rows = portable[spec.name]; if (!Array.isArray(rows)) continue; for (const row of rows) await assertAgentRunArtifactRecordIntegrityV1(row, { requireProjectId: false }); }
+  return snapshot
+}
+
+/**
+ * 当前架构的唯一导出路径。逻辑 World/Work 所有权只使用便携影子 ID，
+ * 物理主键绝不跨越备份边界。
+ */
+export async function deriveStrictExportProjectJSON(projectId: number): Promise<ProjectExportData> {
+  return (await deriveStrictExportProjectSnapshot(projectId)).data
+}
+
+export async function deriveStrictExportProjectSnapshot(projectId: number): Promise<StrictProjectExportSnapshot> {
+  const ownership = await resolveWorkspaceOwnership(projectId)
+  const captured = await captureProjectExport(projectId, CURRENT_EXPORT_VERSION, true)
+  const snapshot = await Dexie.ignoreTransaction(() => portableizeSnapshot(captured))
+  const worldExportId = snapshot.exportIds.get('worlds')?.get(ownership.scope.worldId)
+  const workExportId = snapshot.exportIds.get('works')?.get(ownership.scope.workId)
+  if (worldExportId == null || workExportId == null) throw new Error('[strictExport] ownership 根不在导出快照中')
+  snapshot.data.ownership = {
+    contractVersion: 1,
+    worldExportId,
+    workExportId,
+  }
+  if (!ownership.scope.worldId || !ownership.scope.workId) throw new Error('[strictExport] ownership 根不完整')
+  return snapshot
+}
+
+/**
+ * Capture a strict portable snapshot inside a caller-owned Dexie transaction.
+ * World-release freezing uses this boundary so the source rows and release
+ * manifest are observed atomically instead of nesting another transaction.
+ */
+export async function deriveStrictExportProjectSnapshotInCurrentTransaction(
+  projectId: number,
+  ownership: { worldId: number; workId: number },
+): Promise<StrictProjectExportSnapshot> {
+  if (!Dexie.currentTransaction) {
+    throw new Error('[strictExport] 当前事务快照只能在已打开的 Dexie 事务中派生')
+  }
+  const captured = await captureProjectExportInTransaction(projectId, CURRENT_EXPORT_VERSION, true)
+  // Conversion reads only the captured rows. Start it outside the transaction
+  // context while waitFor keeps the caller's snapshot alive.
+  // Passing an already-running promise would let inner hash/blob keepalives
+  // join the same wait chain and prevent it from completing.
+  const snapshot = await Dexie.waitFor(Dexie.ignoreTransaction(() => portableizeSnapshot(captured, { freezeContextEvidence: false })))
+  const worldExportId = snapshot.exportIds.get('worlds')?.get(ownership.worldId)
+  const workExportId = snapshot.exportIds.get('works')?.get(ownership.workId)
+  if (worldExportId == null || workExportId == null) {
+    throw new Error('[strictExport] 当前事务的 ownership 根不在导出快照中')
+  }
+  snapshot.data.ownership = { contractVersion: 1, worldExportId, workExportId }
+  return snapshot
+}
