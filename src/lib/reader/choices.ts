@@ -10,6 +10,8 @@ import { READER_STEPS_V1, READER_MODEL_CALL_LIMIT_V1,
   completeReaderModelStepV1,failReaderModelStepV1 } from './run'
 import { callReaderModelV1 } from './model'
 import { assertReaderVietnameseProseV1 } from './prose'
+import { verifyReaderSemanticReceiptV1, type ReaderSemanticReceiptV1 } from './semantic-review'
+import { db } from '../db/schema'
 
 export const READER_CHOICE_PROMPT_VERSION_V1='reader-choices-generate-vi-v1'
 export const READER_CHOICE_VERIFIER_PROMPT_VERSION_V1='reader-choices-review-vi-v1'
@@ -159,21 +161,31 @@ export function buildReaderChoiceVerifierMessagesV1(
         .join('\n\n')},
   ]
 }
-function safeContinue(finalProse:string):boolean{
-  // A deterministic continue never changes Canon or rewrites the frozen text.
-  // It is forbidden if the prose itself fails the hard Reader text contract.
-  try{assertReaderVietnameseProseV1(finalProse);return true}catch{return false}
+async function safeContinue(handle:ReaderRunHandleV1,finalProse:string):Promise<boolean>{
+  // A Continue is a real selectable option only for an active Reader session.
+  // A paused/archived reader is not silently revived by a fallback.
+  try{assertReaderVietnameseProseV1(finalProse)}catch{return false}
+  const row=await db.readerSessions.get(handle.identity.sessionId)
+  return !!row&&row.status==='active'&&row.projectId===handle.scope.projectId&&
+    row.workId===handle.scope.workId
 }
 export async function runReaderChoiceStageV1(input:{
   handle:ReaderRunHandleV1
   finalProse:string
   finalProseHash:string
+  /** A signed passed V3 receipt is mandatory even for direct stage callers. */
+  v3:ReaderSemanticReceiptV1
+  originalProse:string
   resolution:AIRequestConfigResolution
   maxChoiceRetries?:number
   signal?:AbortSignal
 }):Promise<ReaderChoicesReceiptV1>{
   const {handle,finalProse}=input
   await assertReaderContextCurrentV1(handle.scope,handle.frozen)
+  if(input.v3.status!=='passed'||input.v3.finalProseHash!==input.finalProseHash||
+    !await verifyReaderSemanticReceiptV1({
+      handle,receipt:input.v3,originalText:input.originalProse,
+    }))fail('choices denied without verified, session-bound V3 pass')
   if(await hashCanonicalValue(finalProse)!==input.finalProseHash)
     fail('final prose hash changed after V3')
   const maxRetries=input.maxChoiceRetries??0
@@ -265,7 +277,7 @@ export async function runReaderChoiceStageV1(input:{
   }
   const fallbackContinue=branches.length===0
   if(fallbackContinue){
-    if(!safeContinue(finalProse))fail('no valid branch and deterministic Continue forbidden')
+    if(!await safeContinue(handle,finalProse))fail('no valid branch and deterministic Continue forbidden')
     branches=[{choiceKey:'continue',kind:'continue',text:'Đọc tiếp',sourceQuote:null}]
   }
   await assertReaderContextCurrentV1(handle.scope,handle.frozen)
