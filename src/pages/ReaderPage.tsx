@@ -57,6 +57,7 @@ export default function ReaderPage(){
   const mounted=useRef(true)
   const inFlight=useRef(false)
   const refreshId=useRef(0)
+  const lastDisplayedHead=useRef<{sessionId:number;headTurnId:number|null}|null>(null)
 
   const selectSession=useCallback((id:number|null)=>{
     setParams(id===null?{}:{session:String(id)},{replace:true})
@@ -129,7 +130,10 @@ export default function ReaderPage(){
     let cancelled=false
     const frame=requestAnimationFrame(()=>{
       if(cancelled)return
-      const saved=Number(localStorage.getItem(scrollKey(projectId,workId,id)))
+      const previous=lastDisplayedHead.current
+      const newlyPublished=previous?.sessionId===id&&previous.headTurnId!==view.session.headTurnId
+      lastDisplayedHead.current={sessionId:id,headTurnId:view.session.headTurnId}
+      const saved=newlyPublished?0:Number(localStorage.getItem(scrollKey(projectId,workId,id)))
       const maxScroll=Math.max(0,document.documentElement.scrollHeight-window.innerHeight)
       if(Number.isFinite(saved)&&saved>0){
         window.scrollTo(0,Math.min(saved,maxScroll))
