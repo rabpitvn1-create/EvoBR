@@ -14,6 +14,7 @@ import { sha256Text } from '../ai/chapter-memory/text-normalization'
 import { db } from '../db/schema'
 import { assertRecordInScope, resolveReadScope } from '../workspace/scope'
 import { maybeInjectHarnessFaultV1 } from '../agent/dev-fault-injection'
+import { assertReaderAssemblyBoundaryV1 } from '../reader/gateway-sources'
 
 // CTXG contracts share the existing assembleContext/CONTEXT_SOURCES boundary.
 // Re-exporting keeps callers away from a parallel context entrypoint.
@@ -136,6 +137,7 @@ function deriveInputBudget(input: AssembleContextInput): number {
 
 export async function assembleContext(input: AssembleContextInput): Promise<AssembleContextResult> {
   maybeInjectHarnessFaultV1('context.before-assemble')
+  await assertReaderAssemblyBoundaryV1(input)
   const scope = await resolveReadScope(input)
   const resolvedBase: AssembleContextInput = { ...input, projectId: scope.projectId, scope }
   const selected = selectSources(resolvedBase)
