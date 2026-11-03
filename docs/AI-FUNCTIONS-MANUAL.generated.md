@@ -313,7 +313,7 @@ AI 输出只可提议这里登记的规范字段。普通写回经 `adopt({ targ
 
 ## 五、正式 AI 入口（FormalAIEntryBindingV1）
 
-共 31 个操作级绑定。运行时按 entryId 校验 category 和 Skill；采纳权限不由文字说明决定。显式 outputModality=audio 使用独立冻结音频执行器，文本入口不补默认字段。
+共 36 个操作级绑定。运行时按 entryId 校验 category 和 Skill；采纳权限不由文字说明决定。显式 outputModality=audio 使用独立冻结音频执行器，文本入口不补默认字段。
 
 | entryId | Skill | category | 边界 | 候选 | 采纳目标 | 调用方 |
 |---|---|---|---|---|---|---|
@@ -348,6 +348,11 @@ AI 输出只可提议这里登记的规范字段。普通写回经 `adopt({ targ
 | `prompt.examples.generate` | `inspiration.review` | `prompt.examples` | auxiliary / authoring-draft | `prompt-example-draft` | 禁止 | `src/components/settings/prompt/PromptExamplesEditor.tsx` |
 | `prompt.workflow.step` | `inspiration.review` | `*` | experimental / experimental | `prompt-workflow-step-draft` | 禁止 | `src/lib/generation/workflow-generation-node.ts` |
 | `style.calibration.preview` | `prose.style-learn` | `style.calibrate` | auxiliary / authoring-draft | `style-calibration-preview` | 禁止 | `src/components/style/StyleCalibrationPanel.tsx` |
+| `reader.prose.generate` | `reader.prose.generate` | `reader.prose.generate` | formal / durable-run | `reader-prose-candidate` | 禁止 | `src/lib/reader/model.ts` |
+| `reader.prose.review` | `reader.prose.review` | `reader.prose.review` | formal / durable-run | `reader-prose-semantic-verdict` | 禁止 | `src/lib/reader/model.ts` |
+| `reader.prose.revise` | `reader.prose.revise` | `reader.prose.revise` | formal / durable-run | `reader-prose-revision` | 禁止 | `src/lib/reader/model.ts` |
+| `reader.choices.generate` | `reader.choices.generate` | `reader.choices.generate` | formal / durable-run | `reader-choice-candidate` | 禁止 | `src/lib/reader/model.ts` |
+| `reader.choices.review` | `reader.choices.review` | `reader.choices.review` | formal / durable-run | `reader-choice-verdict` | 禁止 | `src/lib/reader/model.ts` |
 
 ---
 
