@@ -61,6 +61,39 @@ export async function assertImportedReaderGraphV1(projectId: number): Promise<vo
       fail('published turn parent crosses unrelated reader session')
     }
   }
+  // A fork cutoff must belong to the actual published path of the declared
+  // parent, even if the parent subsequently advanced. A sibling turn that
+  // happens to share this Work is never a valid ancestor.
+  function publishedPath(headId: number | null): Set<number> {
+    const path = new Set<number>()
+    let id = headId
+    while (id != null) {
+      if (path.has(id)) fail('cycle in published reader history')
+      const turn = byTurn.get(id)
+      if (!turn) fail('published history has an unreachable turn')
+      path.add(id)
+      id = turn.parentTurnId
+    }
+    return path
+  }
+  for (const session of sessions) {
+    const parent = session.parentSessionId == null ? null : bySession.get(session.parentSessionId)!
+    if (parent) {
+      if (session.forkTurnId == null ||
+        !publishedPath(parent.headTurnId).has(session.forkTurnId)) {
+        fail('fork cutoff is not on parent published lineage')
+      }
+    }
+    const visiblePath = publishedPath(session.headTurnId)
+    const sessionTurns = turns.filter(turn => turn.sessionId === session.id)
+    if (sessionTurns.some(turn => !visiblePath.has(turn.id!))) {
+      fail('published turn is not reachable from session head')
+    }
+    if (session.memoryReadyThroughTurnId != null &&
+      !visiblePath.has(session.memoryReadyThroughTurnId)) {
+      fail('reader memory readiness turn is outside published lineage')
+    }
+  }
   for (const choice of choices) {
     const session = bySession.get(choice.sessionId)
     const turn = byTurn.get(choice.turnId)
