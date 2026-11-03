@@ -147,6 +147,7 @@
     "src/components/project/ReferencePanel.tsx",
     "src/components/project/reference-view.ts",
     "src/components/project/useReferenceDerivedAI.ts",
+    "src/components/reader/ReaderStage.tsx",
     "src/components/relations/CharacterRelationPanel.tsx",
     "src/components/relations/RelationGraph.tsx",
     "src/components/retrieval/RagEntrySelector.tsx",
@@ -653,9 +654,11 @@
     "src/lib/reader/model.ts",
     "src/lib/reader/prose.ts",
     "src/lib/reader/publication.ts",
+    "src/lib/reader/readback.ts",
     "src/lib/reader/recovery.ts",
     "src/lib/reader/run.ts",
     "src/lib/reader/semantic-review.ts",
+    "src/lib/reader/stage-assets.ts",
     "src/lib/reference-analysis/derived-agent-baseline.ts",
     "src/lib/reference-analysis/derived-agent-plan.ts",
     "src/lib/reference-analysis/lifecycle.ts",
@@ -819,7 +822,9 @@
     "src/lib/world-map/spatial-layout.ts",
     "src/main.tsx",
     "src/pages/LongformLibraryPage.tsx",
+    "src/pages/ReaderPage.tsx",
     "src/pages/WorkspacePage.tsx",
+    "src/pages/reader.css",
     "src/stores/_factories.ts",
     "src/stores/ai-config.ts",
     "src/stores/ai-generation-session.ts",
@@ -908,6 +913,10 @@
         },
         {
           "path": "src/pages/LongformLibraryPage.tsx",
+          "kind": "dynamic"
+        },
+        {
+          "path": "src/pages/ReaderPage.tsx",
           "kind": "dynamic"
         },
         {
@@ -5478,6 +5487,15 @@
         }
       ]
     },
+    "src/components/reader/ReaderStage.tsx": {
+      "parent": "src/pages/ReaderPage.tsx",
+      "dependencies": [
+        {
+          "path": "src/lib/reader/stage-assets.ts",
+          "kind": "module"
+        }
+      ]
+    },
     "src/components/relations/CharacterRelationPanel.tsx": {
       "parent": "src/pages/WorkspacePage.tsx",
       "dependencies": [
@@ -8800,7 +8818,7 @@
       ]
     },
     "src/lib/agent/creative-reliability.ts": {
-      "parent": "src/components/agent/ChatCopilotPanel.tsx",
+      "parent": "src/stores/ai-config.ts",
       "dependencies": []
     },
     "src/lib/agent/creative-rules-copilot.ts": {
@@ -9962,7 +9980,7 @@
       ]
     },
     "src/lib/agent/prose-semantic-review.ts": {
-      "parent": "src/lib/agent/run/prose-generation-durable.ts",
+      "parent": "src/lib/reader/semantic-review.ts",
       "dependencies": [
         {
           "path": "src/lib/agent/run/hash.ts",
@@ -11199,7 +11217,7 @@
       ]
     },
     "src/lib/agent/run/hash.ts": {
-      "parent": "src/lib/agent/run/impact-manual-correction-durable.ts",
+      "parent": "src/lib/reader/publication.ts",
       "dependencies": [
         {
           "path": "src/lib/ai/chapter-memory/text-normalization.ts",
@@ -15105,7 +15123,7 @@
       ]
     },
     "src/lib/ai/codex-terminal-failure.ts": {
-      "parent": "src/lib/ai/client.ts",
+      "parent": "src/lib/ai/codex-transport.ts",
       "dependencies": []
     },
     "src/lib/ai/codex-transport.ts": {
@@ -15543,7 +15561,7 @@
       "dependencies": []
     },
     "src/lib/ai/task-routing.ts": {
-      "parent": "src/lib/ai/usage-log.ts",
+      "parent": "src/stores/ai-config.ts",
       "dependencies": [
         {
           "path": "src/lib/ai/config-readiness.ts",
@@ -18143,7 +18161,7 @@
       ]
     },
     "src/lib/memory/artifact-store.ts": {
-      "parent": "src/components/editor/ChapterEditor.tsx",
+      "parent": "src/lib/reader/generation.ts",
       "dependencies": [
         {
           "path": "src/lib/agent/run/event-schema.ts",
@@ -18241,7 +18259,7 @@
       ]
     },
     "src/lib/memory/evidence-policy.ts": {
-      "parent": "src/lib/memory/settlement.ts",
+      "parent": "src/lib/memory/artifact-store.ts",
       "dependencies": [
         {
           "path": "src/lib/types/index.ts",
@@ -20245,7 +20263,7 @@
       ]
     },
     "src/lib/reader/baseline.ts": {
-      "parent": "src/lib/reader/import-integrity.ts",
+      "parent": "src/pages/ReaderPage.tsx",
       "dependencies": [
         {
           "path": "src/lib/db/schema.ts",
@@ -20385,7 +20403,7 @@
       ]
     },
     "src/lib/reader/context.ts": {
-      "parent": "src/lib/registry/assemble-context.ts",
+      "parent": "src/lib/reader/recovery.ts",
       "dependencies": [
         {
           "path": "src/lib/agent/run/hash.ts",
@@ -20467,7 +20485,7 @@
       ]
     },
     "src/lib/reader/generation.ts": {
-      "parent": "src/lib/registry/assemble-context.ts",
+      "parent": "src/lib/reader/publication.ts",
       "dependencies": [
         {
           "path": "src/lib/agent/run/event-store.ts",
@@ -20537,7 +20555,7 @@
       ]
     },
     "src/lib/reader/lineage.ts": {
-      "parent": "src/lib/reader/context.ts",
+      "parent": "src/lib/reader/publication.ts",
       "dependencies": [
         {
           "path": "src/lib/agent/run/hash.ts",
@@ -20574,7 +20592,7 @@
       ]
     },
     "src/lib/reader/memory-saga.ts": {
-      "parent": "src/lib/reader/context.ts",
+      "parent": "src/lib/reader/recovery.ts",
       "dependencies": [
         {
           "path": "src/lib/agent/run/hash.ts",
@@ -20632,7 +20650,7 @@
       ]
     },
     "src/lib/reader/prose.ts": {
-      "parent": "src/lib/reader/generation.ts",
+      "parent": "src/lib/reader/recovery.ts",
       "dependencies": [
         {
           "path": "src/lib/reader/context.ts",
@@ -20645,7 +20663,7 @@
       ]
     },
     "src/lib/reader/publication.ts": {
-      "parent": "src/lib/reader/context.ts",
+      "parent": "src/pages/ReaderPage.tsx",
       "dependencies": [
         {
           "path": "src/lib/agent/run/hash.ts",
@@ -20677,8 +20695,33 @@
         }
       ]
     },
+    "src/lib/reader/readback.ts": {
+      "parent": "src/pages/ReaderPage.tsx",
+      "dependencies": [
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/lineage.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/publication.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        }
+      ]
+    },
     "src/lib/reader/recovery.ts": {
-      "parent": "src/lib/reader/context.ts",
+      "parent": "src/pages/ReaderPage.tsx",
       "dependencies": [
         {
           "path": "src/lib/db/schema.ts",
@@ -20823,6 +20866,10 @@
           "kind": "type"
         }
       ]
+    },
+    "src/lib/reader/stage-assets.ts": {
+      "parent": "src/components/reader/ReaderStage.tsx",
+      "dependencies": []
     },
     "src/lib/reference-analysis/derived-agent-baseline.ts": {
       "parent": "src/lib/registry/context-sources.ts",
@@ -22448,7 +22495,7 @@
       ]
     },
     "src/lib/types/reader.ts": {
-      "parent": "src/lib/db/schema.ts",
+      "parent": "src/pages/ReaderPage.tsx",
       "dependencies": []
     },
     "src/lib/types/reference.ts": {
@@ -22637,7 +22684,7 @@
       "dependencies": []
     },
     "src/lib/utils/id.ts": {
-      "parent": "src/components/outline/DetailedOutlinePanel.tsx",
+      "parent": "src/stores/ai-config.ts",
       "dependencies": []
     },
     "src/lib/utils/sanitize-svg.ts": {
@@ -22789,7 +22836,7 @@
       ]
     },
     "src/lib/workspace/scope.ts": {
-      "parent": "src/pages/WorkspacePage.tsx",
+      "parent": "src/pages/ReaderPage.tsx",
       "dependencies": [
         {
           "path": "src/lib/context-gateway/resource-uid.ts",
@@ -23706,7 +23753,7 @@
       ]
     },
     "src/lib/world-engine/release-hash.ts": {
-      "parent": "src/lib/world-engine/release-codec.ts",
+      "parent": "src/lib/reader/baseline.ts",
       "dependencies": []
     },
     "src/lib/world-engine/releases.ts": {
@@ -24242,6 +24289,55 @@
         }
       ]
     },
+    "src/pages/ReaderPage.tsx": {
+      "parent": "src/App.tsx",
+      "dependencies": [
+        {
+          "path": "src/components/reader/ReaderStage.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/baseline.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/publication.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/readback.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/recovery.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/workspace/scope.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/pages/reader.css",
+          "kind": "module"
+        },
+        {
+          "path": "src/stores/ai-config.ts",
+          "kind": "module"
+        }
+      ]
+    },
     "src/pages/WorkspacePage.tsx": {
       "parent": "src/App.tsx",
       "dependencies": [
@@ -24555,6 +24651,10 @@
         }
       ]
     },
+    "src/pages/reader.css": {
+      "parent": "src/pages/ReaderPage.tsx",
+      "dependencies": []
+    },
     "src/stores/_factories.ts": {
       "parent": "src/stores/project-singletons.ts",
       "dependencies": [
@@ -24573,7 +24673,7 @@
       ]
     },
     "src/stores/ai-config.ts": {
-      "parent": "src/lib/registry/context-sources.ts",
+      "parent": "src/pages/ReaderPage.tsx",
       "dependencies": [
         {
           "path": "src/lib/agent/context-policy.ts",
