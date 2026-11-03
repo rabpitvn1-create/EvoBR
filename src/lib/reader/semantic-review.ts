@@ -28,9 +28,6 @@ import type { AgentSkillExecutionBindingV2 } from '../types/agent-run'
 
 export const READER_V3_RECEIPT_VERSION_V1 = 'reader-v3-session-bound-v1'
 function fail(message:string):never{throw Error('[readerV3] '+message)}
-const sources=(handle:ReaderRunHandleV1)=>handle.frozen.assembly.included.map((key,i)=>(
-  '<source key="'+key+'">\n'+(handle.frozen.assembly.segments[i]?.content??'')+'\n</source>'
-)).join('\n\n')
 export function buildReaderSemanticReviewPromptV1(
   input:{chapterTitle:string;candidateText:string;assembled:ReaderRunHandleV1['frozen']['assembly']},
 ):ChatMessage[]{
