@@ -14,6 +14,7 @@ export interface ReaderCommitTestHooksV1 {
   /** Testing only. An injected failure must reject the transaction. */
   beforeAdopt?:WriteHookV1
   forceCasSkip?:boolean
+  forceChoiceShortWrite?:boolean
 }
 export interface ReaderPreparedCommitV1 {
   scope:WorkspaceScope
@@ -38,7 +39,8 @@ async function writeOne(input:{
     ...(input.recordId==null?{}:{recordId:input.recordId}),
     ...(input.cas?{compareAndSet:{kind:'record-fields-value-hash' as const,
       fields:input.cas.fields,expectedHash:input.cas.expectedHash}}:{}),
-    data:input.data,
+    data:input.hooks?.forceChoiceShortWrite&&input.target==='readerChoices'
+      ?{...input.data,kind:'unregistered-kind'}:input.data,
   })
   if(result.written.length!==1||result.skipped.length||result.fkErrors.length||
     result.unknown.length||result.typeErrors.length||
@@ -138,10 +140,9 @@ export async function commitReaderPublicationV1(
     }})
     // The registered multi-field CAS operates as a nested Dexie transaction.
     // A resolved skip is a hard failure; the outer transaction rolls back ALL rows.
-    if(hooks?.forceCasSkip)fail('injected CAS skip')
     const sessionId=await writeOne({scope,target:'readerSessions',hooks,
       recordId:intent.sessionId,
-      cas:{fields:READER_SESSION_CAS_FIELDS_V1,expectedHash:prepared.sessionCasHash},
+      cas:{fields:READER_SESSION_CAS_FIELDS_V1,expectedHash:hooks?.forceCasSkip?'0'.repeat(64):prepared.sessionCasHash},
       data:{headTurnId:turnId,revision:intent.expectedRevision+1},
     })
     if(sessionId!==intent.sessionId)fail('session CAS wrote wrong record')
