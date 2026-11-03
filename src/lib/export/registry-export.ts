@@ -33,7 +33,7 @@ import { canonicalNarrativeJsonV1, compareUnicodeCodePointsV1 } from '../narrati
 import { isPortableResourceUidV1 } from '../context-gateway/resource-uid'
 
 /** 当前完整便携备份契约。 */
-export const CURRENT_EXPORT_VERSION = 17
+export const CURRENT_EXPORT_VERSION = 18
 
 export interface StrictProjectExportSnapshot {
   data: ProjectExportData
@@ -182,6 +182,9 @@ function toExportRow(
     if (val != null) {
       const got = targetMap?.get(val)
       mapped = got ?? null
+      if (got == null && rm.onUnmapped === 'require') {
+        throw new Error(`[deriveExport] 缺失必填外键映射:${spec.name}.${rm.field}=${val}`)
+      }
       if (got == null && rm.onUnmapped === 'drop') return null // 孤儿行丢弃
     }
     obj[rm.exportAs] = mapped

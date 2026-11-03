@@ -29,6 +29,12 @@ const WORK_DOMAIN_OWNER = {
   allowed: ['work'], defaultOwner: 'work', locator: { kind: 'field', owner: 'work', field: 'workId' },
 } as const satisfies DomainOwnershipSpec
 
+/** Reader child rows belong to a Work through their session, not by workId. */
+const READER_CHILD_WORK_DOMAIN_OWNER = {
+  allowed: ['work'], defaultOwner: 'work',
+  locator: { kind: 'parent', owner: 'work', table: 'readerSessions', field: 'sessionId' },
+} as const satisfies DomainOwnershipSpec
+
 const WORLD_OR_WORK_DOMAIN_OWNER = {
   allowed: ['world', 'work'], defaultOwner: 'work', locator: {
     kind: 'exclusive-fields', worldField: 'worldId', workField: 'workId',
@@ -809,6 +815,106 @@ const PROJECT_TABLE_REGISTRATIONS: ProjectTableRegistration[] = [
       onDelete: 'cascade',
     }],
     note: 'IDEA-1 本地断点续跑原文；不进 JSON 备份，报告与来源哈希仍可便携往返' },
+// ───────────────────── P2 Reader runtime persistence (never authoring Chapter) ─────────────────────
+// All nine are project-owned, exportable and introduced in portable backup v18.
+// Writer operations in P3–P5 must enforce lineage and immutable publication.
+{ table: db.readerSessions, name: 'readerSessions', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true,
+  domainOwner: WORK_DOMAIN_OWNER, tree: { parentField: 'parentSessionId' },
+  defaults: {
+    parentSessionId: null, forkTurnId: null, headTurnId: null,
+    revision: 0, status: 'active', memoryReadyThroughTurnId: null,
+  },
+  refs: [
+    { kind: 'simple', field: 'id', target: 'readerSessions[parentSessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerTurns[sessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerChoices[sessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerDecisions[sessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerFacts[sessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerKnowledge[sessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerMemory[sessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerRetrievalChunks[sessionId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerPublicationRuns[sessionId]', onDelete: 'cascade' },
+  ],
+  exportRemap: [
+    { field: 'workId', remapVia: 'works', exportAs: '_workExportId', onUnmapped: 'require' },
+    { field: 'parentSessionId', remapVia: 'readerSessions', selfTree: true, exportAs: '_parentExportId', onUnmapped: 'require' },
+    { field: 'forkTurnId', remapVia: 'readerTurns', exportAs: '_forkTurnExportId', deferImport: true, onUnmapped: 'require' },
+    { field: 'headTurnId', remapVia: 'readerTurns', exportAs: '_headTurnExportId', deferImport: true, onUnmapped: 'require' },
+    { field: 'memoryReadyThroughTurnId', remapVia: 'readerTurns', exportAs: '_memoryReadyThroughTurnExportId', deferImport: true, onUnmapped: 'require' },
+  ],
+  note: 'Pinned immutable Canon baseline, fork ancestry and CAS head; no live Work memory fallback.' },
+{ table: db.readerTurns, name: 'readerTurns', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true,
+  domainOwner: READER_CHILD_WORK_DOMAIN_OWNER, tree: { parentField: 'parentTurnId' },
+  defaults: { parentTurnId: null, sceneHintsJson: null, status: 'published' },
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'parentTurnId', remapVia: 'readerTurns', selfTree: true, exportAs: '_parentExportId', onUnmapped: 'require' },
+  ],
+  refs: [
+    { kind: 'simple', field: 'id', target: 'readerChoices[turnId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerFacts[originTurnId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerKnowledge[originTurnId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerRetrievalChunks[sourceTurnId]', onDelete: 'cascade' },
+    { kind: 'simple', field: 'id', target: 'readerPublicationRuns[resultTurnId]', onDelete: 'cascade' },
+  ],
+  note: 'Only committed immutable prose; cross-session parentTurnId must satisfy effective fork lineage.' },
+{ table: db.readerChoices, name: 'readerChoices', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true, domainOwner: READER_CHILD_WORK_DOMAIN_OWNER,
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'turnId', remapVia: 'readerTurns', exportAs: '_turnExportId', onUnmapped: 'require' },
+  ],
+  refs: [{ kind: 'simple', field: 'id', target: 'readerDecisions[choiceId]', onDelete: 'cascade' }],
+  note: 'Published branch/continue options remain immutable; no disabled transition.' },
+{ table: db.readerDecisions, name: 'readerDecisions', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true, domainOwner: READER_CHILD_WORK_DOMAIN_OWNER,
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'sourceTurnId', remapVia: 'readerTurns', exportAs: '_sourceTurnExportId', onUnmapped: 'require' },
+    { field: 'choiceId', remapVia: 'readerChoices', exportAs: '_choiceExportId', onUnmapped: 'require' },
+    { field: 'resultTurnId', remapVia: 'readerTurns', exportAs: '_resultTurnExportId', onUnmapped: 'require' },
+  ],
+  note: 'Committed selected choice and request-key identity; opening has no decision.' },
+{ table: db.readerFacts, name: 'readerFacts', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true, domainOwner: READER_CHILD_WORK_DOMAIN_OWNER,
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'originTurnId', remapVia: 'readerTurns', exportAs: '_originTurnExportId', onUnmapped: 'require' },
+  ],
+  note: 'Only confirmed and provenance-verified facts can enter reader context (P3).' },
+{ table: db.readerKnowledge, name: 'readerKnowledge', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true, domainOwner: READER_CHILD_WORK_DOMAIN_OWNER,
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'originTurnId', remapVia: 'readerTurns', exportAs: '_originTurnExportId', onUnmapped: 'require' },
+    { field: 'characterId', remapVia: 'characters', exportAs: '_characterExportId', onUnmapped: 'require' },
+  ],
+  note: 'Character knowledge is session-originated and evidence-bound, never Work-wide.' },
+{ table: db.readerMemory, name: 'readerMemory', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true, domainOwner: READER_CHILD_WORK_DOMAIN_OWNER,
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'throughTurnId', remapVia: 'readerTurns', exportAs: '_throughTurnExportId', onUnmapped: 'require' },
+    { field: 'processingRunId', remapVia: 'agentRuns', exportAs: '_processingRunExportId' },
+  ],
+  note: 'Derived continuity with exact lineage fingerprint, not authoring chapter memory.' },
+{ table: db.readerRetrievalChunks, name: 'readerRetrievalChunks', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true, domainOwner: READER_CHILD_WORK_DOMAIN_OWNER,
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'sourceTurnId', remapVia: 'readerTurns', exportAs: '_sourceTurnExportId', onUnmapped: 'require' },
+  ],
+  note: 'Local retrieval is eligible only for an effective published lineage.' },
+{ table: db.readerPublicationRuns, name: 'readerPublicationRuns', owner: 'project', exportable: true,
+  introducedBackupVersion: 18, exportIdField: true, domainOwner: READER_CHILD_WORK_DOMAIN_OWNER,
+  exportRemap: [
+    { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
+    { field: 'resultTurnId', remapVia: 'readerTurns', exportAs: '_resultTurnExportId', onUnmapped: 'require' },
+    { field: 'runId', remapVia: 'agentRuns', exportAs: '_runExportId', onUnmapped: 'require' },
+  ],
+  note: 'Atomic committed receipt only; candidate stays in durable agent ledger.' },
 // ───────────────────── 临时态 / blob ─────────────────────
   { table: db.importSessions, name: 'importSessions', owner: 'transient', exportable: false,
     domainOwner: WORKSPACE_DOMAIN_OWNER },

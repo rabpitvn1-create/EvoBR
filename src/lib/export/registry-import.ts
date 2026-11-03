@@ -21,6 +21,7 @@ import { transactionTablesFor } from '../registry/lifecycle'
 import type { ExportRefRemap, TableSpec } from '../registry/types'
 import type { ProjectExportData, ProjectImportOptionsV1 } from './json-export'
 import { CURRENT_BACKUP_VERSION, normalizeProjectBackup } from './backup-trust'
+import { assertImportedReaderGraphV1 } from '../reader/import-integrity'
 
 import { remapNarrativeDomainFieldV1 } from '../narrative-domain/references'
 import { assertNarrativeLineageRowsV1 } from '../world-engine/narrative-lineage-lifecycle'
@@ -230,13 +231,29 @@ function deriveImportOrder(specs: TableSpec[]): TableSpec[] {
 }
 
 /** 树表行级拓扑排序:_parentExportId 为空或父已就位的行优先,保证 parent 先于 child 落库 */
-function topoSortTreeRows(rows: any[]): any[] {
+function topoSortTreeRows(rows: any[], strict = false): any[] {
+  if (strict) {
+    const identities = new Set<number>()
+    for (const row of rows) {
+      if (!Number.isSafeInteger(row?._exportId) || identities.has(row._exportId)) {
+        throw new Error('[deriveImport] reader tree portable identity missing or duplicated')
+      }
+      identities.add(row._exportId)
+    }
+    for (const row of rows) {
+      if (row._parentExportId != null && (!Number.isSafeInteger(row._parentExportId) ||
+          !identities.has(row._parentExportId))) {
+        throw new Error('[deriveImport] reader tree parent reference missing')
+      }
+    }
+  }
   const sorted: any[] = []
   const placed = new Set<number>()
   let guard = 0
   while (sorted.length < rows.length) {
     if (guard++ > rows.length + 2) {
-      for (const r of rows) if (!placed.has(r._exportId)) sorted.push(r) // 防环兜底
+      if (strict) throw new Error('[deriveImport] reader tree cycle or invalid parent ordering')
+      for (const r of rows) if (!placed.has(r._exportId)) sorted.push(r) // legacy fallback
       break
     }
     for (const r of rows) {
@@ -313,7 +330,7 @@ export async function deriveImportProjectJSON(data: ProjectExportData, options: 
     } as any) as number
 
     const newIdMaps = new Map<string, Map<number, number>>()
-    const deferredForeignKeys: Array<{ table: any; id: number; field: string; target: string; exportId: number }> = []
+    const deferredForeignKeys: Array<{ table: any; id: number; field: string; target: string; exportId: number; requireTarget: boolean }> = []
     const deferredNarrativeRefs: Array<{
       table: TableSpec['table']; id: number
       remap: Extract<ExportRefRemap, { kind: 'narrative-source-refs-v1' }>
@@ -330,7 +347,7 @@ export async function deriveImportProjectJSON(data: ProjectExportData, options: 
     for (const spec of order) {
       const rawRows: any[] = (data as any)[spec.name]
       if (!Array.isArray(rawRows)) throw new Error(`[deriveImport] 当前备份缺少 ${spec.name}`)
-      const rows = spec.tree ? topoSortTreeRows(rawRows) : rawRows
+      const rows = spec.tree ? topoSortTreeRows(rawRows, spec.name === 'readerSessions' || spec.name === 'readerTurns') : rawRows
       const newIdMap = new Map<number, number>()
       const pendingRefRemap: Array<{ newId: number; stashed: Record<string, any> }> = []
 
@@ -346,7 +363,7 @@ export async function deriveImportProjectJSON(data: ProjectExportData, options: 
         let hasUnmappedKnowledgeRef = false
         let hasUnmappedTemporalSourceRef = false
         let hasUnmappedCultivationProgressRef = false
-        const rowDeferredForeignKeys: Array<{ field: string; target: string; exportId: number }> = []
+        const rowDeferredForeignKeys: Array<{ field: string; target: string; exportId: number; requireTarget: boolean }> = []
         for (const rm of spec.exportRemap ?? []) {
           const exportVal = obj[rm.exportAs]
           delete obj[rm.exportAs]
@@ -361,11 +378,16 @@ export async function deriveImportProjectJSON(data: ProjectExportData, options: 
                 hasUnmappedTemporalSourceRef = true
               }
               if (rm.onUnmapped === 'drop') { dropRow = true; break }
-              if (rm.onUnmapped === 'require') {
+              // A present, nullable cyclic FK is NOT optional evidence: it
+              // may be resolved after all tables exist, but must never vanish.
+              // The legacy importer treated all unresolved non-tree pointers
+              // as best effort and silently left them null after the second pass.
+              if (rm.onUnmapped === 'require' && !rm.deferImport) {
                 throw new Error(`[deriveImport] 缺失必填外键映射:${spec.name}.${rm.field}=${exportVal}`)
               }
               if (!rm.selfTree) {
-                rowDeferredForeignKeys.push({ field: rm.field, target: rm.remapVia, exportId: exportVal })
+                rowDeferredForeignKeys.push({ field: rm.field, target: rm.remapVia,
+                  exportId: exportVal, requireTarget: rm.onUnmapped === 'require' })
               }
             }
             mappedId = got ?? null
@@ -550,6 +572,9 @@ export async function deriveImportProjectJSON(data: ProjectExportData, options: 
     }
     for (const deferred of deferredForeignKeys) {
       const mapped = newIdMaps.get(deferred.target)?.get(deferred.exportId)
+      if (mapped == null && deferred.requireTarget) {
+        throw new Error(`[deriveImport] 缺失延迟外键映射:${deferred.field} -> ${deferred.target}[${deferred.exportId}]`)
+      }
       if (mapped != null) await deferred.table.update(deferred.id, { [deferred.field]: mapped })
     }
     for (const deferred of deferredJsonIdPaths) {
@@ -569,6 +594,10 @@ export async function deriveImportProjectJSON(data: ProjectExportData, options: 
         await deferred.table.update(deferred.id, { [deferred.remap.field]: patch })
       }
     }
+
+    // Reject cross-session and cross-Work reader edges while the same wide
+    // import transaction can still roll back every imported record.
+    await assertImportedReaderGraphV1(newProjectId)
 
     const projectPatch: Record<string, number | null> = {}
     for (const rm of projectSpec.exportRemap ?? []) {

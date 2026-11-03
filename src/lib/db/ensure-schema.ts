@@ -54,6 +54,15 @@ export const REQUIRED_TABLES = [
   'referenceAnalysisSources',
   'referenceChunkAnalysis',
   'references',
+  'readerSessions',
+  'readerTurns',
+  'readerChoices',
+  'readerDecisions',
+  'readerFacts',
+  'readerKnowledge',
+  'readerMemory',
+  'readerRetrievalChunks',
+  'readerPublicationRuns',
   'retrievalChunks',
   'snapshots',
   'stateCards',
@@ -93,8 +102,7 @@ export function assertCurrentSchemaDefinition(): void {
   }
 }
 
-/** Opens the current schema. Dexie preserves v1-v5 release steps, then adds
- * the v6 motion-drama preproduction stores. */
+/** Opens the current Long Form schema, including additive reader v14 stores. */
 export async function openCurrentSchema(): Promise<CurrentSchemaState> {
   assertCurrentSchemaDefinition()
   await db.open()

@@ -452,6 +452,15 @@ if (isCheck) {
   // 忽略末尾 commit hash 行(每次 commit 都会变)的差异
   const strip = (s) => s.replace(/生成时间基准:commit `[^`]*`/g, '生成时间基准:commit `X`')
   if (strip(existing) !== strip(generated)) {
+    // A precisely scoped preview makes generated-registry drift actionable
+    // from CI logs when the only available runtime is GitHub Actions.
+    const actualLines = strip(existing).split('\n')
+    const expectedLines = strip(generated).split('\n')
+    const first = expectedLines.findIndex((line, i) => line !== actualLines[i])
+    const at = first >= 0 ? first : Math.min(actualLines.length, expectedLines.length)
+    console.error('[ai-manual] first mismatch at line ' + (at + 1))
+    console.error('[ai-manual] actual: ' + (actualLines[at] ?? '<EOF>'))
+    console.error('[ai-manual] expected: ' + (expectedLines[at] ?? '<EOF>'))
     console.error('[ai-manual] 生成结果与已提交文件不一致。请运行 `npm run gen:ai-manual` 后提交。')
     process.exit(1)
   }
