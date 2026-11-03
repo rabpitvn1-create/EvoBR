@@ -8,7 +8,7 @@ describe('U1.1 Reader static asset and hint contract',()=>{
     for(let i=0;i<=6;i++){
       const id='level-'+i
       expect(READER_STAGE_ASSETS_V1.levels[id]).toBe('/reader-assets/levels/'+id+'.webp')
-      expect(READER_STAGE_ASSETS_V1.levelFocus[id]).toEqual({x:50,y:50})
+      expect(READER_STAGE_ASSETS_V1.levelFocus[id]).toEqual({x:50,y:i===5?28:50})
     }
     expect(Object.values(READER_STAGE_ASSETS_V1.entities).filter(Boolean)).toHaveLength(8)
     expect(READER_STAGE_ASSETS_V1.protagonist).toBe('/reader-assets/characters/cao-minh.webp')
