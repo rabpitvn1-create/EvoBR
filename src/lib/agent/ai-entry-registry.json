@@ -586,7 +586,7 @@
       "adoptAllowed": false,
       "adoptionTargets": [],
       "allowedCallers": [
-        "src/lib/reader/generation.ts"
+        "src/lib/reader/model.ts"
       ],
       "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
     },
@@ -603,7 +603,7 @@
       "adoptAllowed": false,
       "adoptionTargets": [],
       "allowedCallers": [
-        "src/lib/reader/semantic-review.ts"
+        "src/lib/reader/model.ts"
       ],
       "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
     },
@@ -620,7 +620,7 @@
       "adoptAllowed": false,
       "adoptionTargets": [],
       "allowedCallers": [
-        "src/lib/reader/semantic-review.ts"
+        "src/lib/reader/model.ts"
       ],
       "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
     },
@@ -637,7 +637,7 @@
       "adoptAllowed": false,
       "adoptionTargets": [],
       "allowedCallers": [
-        "src/lib/reader/choices.ts"
+        "src/lib/reader/model.ts"
       ],
       "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
     },
@@ -654,7 +654,7 @@
       "adoptAllowed": false,
       "adoptionTargets": [],
       "allowedCallers": [
-        "src/lib/reader/choices.ts"
+        "src/lib/reader/model.ts"
       ],
       "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
     }
