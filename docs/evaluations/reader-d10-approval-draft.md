@@ -50,7 +50,7 @@ These are **initial candidate policy numbers for Nguyen to accept, change or rej
 | Gate | Proposed threshold | Decision owner |
 | --- | --- | --- |
 | Blind rater count | At least **3 independent** completed reviews for the same 20-turn corpus | Nguyen |
-| Review completion | Each included reviewer must score at least **18/20 turns** across all six dimensions; unknowns disclosed, not treated as 3 | Nguyen |
+| Review completion | Each included reviewer must answer **20/20 turns** across all six dimensions (explicit `unknown` is a valid declared response but not a numeric score); incomplete packets are not counted as completed reviews | Nguyen |
 | Six-axis literary mean | Every axis has overall mean at least **3.7/5** across valid rated turns and reviewers | Nguyen |
 | Continuity stricter gate | Continuity overall mean at least **4.0/5**, and no confirmed direct contradiction masked by a good average | Nguyen |
 | Per-turn collapse | No more than **2/20 turns** have median under **3/5** on any axis; list each such passage | Nguyen |
