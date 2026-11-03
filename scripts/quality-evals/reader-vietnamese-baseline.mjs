@@ -183,10 +183,14 @@ function summarize(turns, config) {
   }
   const totalInputTokens = sumKnown(successful, 'inputTokens')
   const totalOutputTokens = sumKnown(successful, 'outputTokens')
-  const estimateUSD = config.priceIn !== null && config.priceOut !== null
+  const estimatedSuccessCostUSD = config.priceIn !== null && config.priceOut !== null
     && totalInputTokens !== null && totalOutputTokens !== null
     ? (totalInputTokens * config.priceIn + totalOutputTokens * config.priceOut) / 1_000_000
     : null
+  // A failed dispatched call can still be billed. Never label a partial
+  // observed-cost figure as a complete invoice or a definitive total.
+  const failedDispatched = attempts.some(item => !item.ok && item.lifecycle?.phase !== 'pre-dispatch')
+  const estimateUSD = failedDispatched ? null : estimatedSuccessCostUSD
   return {
     completedTurns: turns.filter(t => t.status === 'completed').length,
     expectedTurns: TOTAL_TURNS,
@@ -197,7 +201,9 @@ function summarize(turns, config) {
     inputTokensMeasured: totalInputTokens,
     outputTokensMeasured: totalOutputTokens,
     estimatedCostUSD: estimateUSD,
-    pricingStatus: estimateUSD === null ? 'unpriced-or-provider-usage-missing' : 'estimated-from-user-supplied-prices',
+    pricingStatus: failedDispatched ? 'unknown-billing-for-failed-dispatched-call'
+      : estimateUSD === null ? 'unpriced-or-provider-usage-missing' : 'estimated-from-user-supplied-prices',
+    observedSuccessfulCallCostUSD: estimatedSuccessCostUSD,
     latencyMs: { p50: percentile(durations, 0.5), p95: percentile(durations, 0.95) },
     errors: errorCounts,
     turns: turns.map(turn => ({
@@ -205,6 +211,8 @@ function summarize(turns, config) {
       retries: turn.retries, durationMs: turn.durationMs,
       inputTokensMeasured: sumKnown(turn.attempts.filter(a => a.ok), 'inputTokens'),
       outputTokensMeasured: sumKnown(turn.attempts.filter(a => a.ok), 'outputTokens'),
+      estimatedCostUSD: turn.attempts.every(a => a.estimatedCostUSD !== null)
+        ? turn.attempts.reduce((sum, a) => sum + a.estimatedCostUSD, 0) : null,
     })),
   }
 }
@@ -281,6 +289,10 @@ async function main() {
           inputTokens: usageNumber(usage.inputTokens),
           outputTokens: usageNumber(usage.outputTokens),
           totalTokens: usageNumber(usage.totalTokens),
+          estimatedCostUSD: result.ok && config.priceIn !== null && config.priceOut !== null
+            && usageNumber(usage.inputTokens) !== null && usageNumber(usage.outputTokens) !== null
+            ? (usage.inputTokens * config.priceIn + usage.outputTokens * config.priceOut) / 1_000_000
+            : null,
           name: result.ok ? null : result.name,
           status: result.ok ? null : result.status,
           code: result.ok ? null : result.code,
@@ -312,7 +324,7 @@ async function main() {
     await persist('completed')
     process.stdout.write('REAL 20-TURN RUN COMPLETE. Report: ' + reportPath + '\n')
   } catch (error) {
-    await persist('blocked', { name: error?.name || 'Error', message: String(error?.message || error).slice(0, 300) })
+    await persist('blocked', { name: error?.name || 'Error', code: 'runner-error' })
     throw error
   } finally {
     await browser?.close()
