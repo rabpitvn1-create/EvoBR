@@ -326,6 +326,116 @@ const ADOPTION_SCHEMAS_RAW: CollectionAdoptionSpec[] = [
     ],
     replaceScope: ['analysisRunId'],
   }
+  // P2 reader records are coordinator-owned structured targets, not authoring
+  // Chapter targets. AI prose/choices must first pass P4/P5 evidence gates;
+  // registering a field here does not grant any formal AI Skill write rights.
+  {
+    target: 'readerSessions',
+    identity: 'id', duplicatePolicy: 'error',
+    required: ['revision', 'status', 'canonBaselineRef', 'canonBaselineHash', 'canonBaselineSnapshotJson'],
+    ownerFrom: 'work',
+    autoStamps: ['projectId', 'workId', 'createdAt', 'updatedAt'],
+    fkChecks: [
+      { field: 'parentSessionId', target: 'readerSessions' },
+      { field: 'forkTurnId', target: 'readerTurns' },
+      { field: 'headTurnId', target: 'readerTurns' },
+      { field: 'memoryReadyThroughTurnId', target: 'readerTurns' },
+    ],
+  },
+  {
+    target: 'readerTurns',
+    identity: { kind: 'composite', fields: ['sessionId', 'turnOrdinal'] },
+    duplicatePolicy: 'error',
+    required: ['sessionId', 'turnOrdinal', 'content', 'contentHash', 'status'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'parentTurnId', target: 'readerTurns' },
+    ],
+  },
+  {
+    target: 'readerChoices',
+    identity: { kind: 'composite', fields: ['turnId', 'choiceKey'] },
+    duplicatePolicy: 'error',
+    required: ['sessionId', 'turnId', 'choiceKey', 'kind', 'text', 'order', 'status'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'turnId', target: 'readerTurns' },
+    ],
+  },
+  {
+    target: 'readerDecisions',
+    identity: { kind: 'composite', fields: ['sessionId', 'requestKey'] },
+    duplicatePolicy: 'error',
+    required: ['sessionId', 'requestKey', 'sourceTurnId', 'choiceId', 'resultTurnId'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'sourceTurnId', target: 'readerTurns' },
+      { field: 'choiceId', target: 'readerChoices' },
+      { field: 'resultTurnId', target: 'readerTurns' },
+    ],
+  },
+  {
+    target: 'readerFacts',
+    identity: 'id', duplicatePolicy: 'error',
+    required: ['sessionId', 'originTurnId', 'predicate', 'subjectRef', 'valueJson', 'evidenceQuote', 'sourceHash', 'status'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'originTurnId', target: 'readerTurns' },
+    ],
+  },
+  {
+    target: 'readerKnowledge',
+    identity: 'id', duplicatePolicy: 'error',
+    required: ['sessionId', 'characterId', 'originTurnId', 'knowledgeKey', 'statement', 'sourceQuote', 'status'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'characterId', target: 'characters' },
+      { field: 'originTurnId', target: 'readerTurns' },
+    ],
+  },
+  {
+    target: 'readerMemory',
+    identity: { kind: 'composite', fields: ['sessionId', 'throughTurnId'] },
+    duplicatePolicy: 'error',
+    required: ['sessionId', 'throughTurnId', 'summary', 'continuityJson', 'sourceTextHash',
+      'lineageFingerprint', 'summaryPolicyVersion', 'status'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'throughTurnId', target: 'readerTurns' },
+      { field: 'processingRunId', target: 'agentRuns' },
+    ],
+  },
+  {
+    target: 'readerRetrievalChunks',
+    identity: { kind: 'composite', fields: ['sessionId', 'sourceTurnId', 'contentHash'] },
+    duplicatePolicy: 'error',
+    required: ['sessionId', 'sourceTurnId', 'content', 'contentHash', 'sourceQuote'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'sourceTurnId', target: 'readerTurns' },
+    ],
+  },
+  {
+    target: 'readerPublicationRuns',
+    identity: { kind: 'composite', fields: ['sessionId', 'requestKey'] },
+    duplicatePolicy: 'error',
+    required: ['sessionId', 'requestKey', 'runId', 'candidateHash', 'requestFingerprint',
+      'contextManifestHash', 'semanticArtifactHash', 'expectedSessionRevision',
+      'resultTurnId', 'receiptJson', 'status'],
+    ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
+    fkChecks: [
+      { field: 'sessionId', target: 'readerSessions' },
+      { field: 'runId', target: 'agentRuns' },
+      { field: 'resultTurnId', target: 'readerTurns' },
+    ],
+  },
 ]
 
 const ADOPTION_EXTENSION_REGISTRATIONS: readonly AdoptionExtensionSpec[] = [
