@@ -193,3 +193,27 @@ export async function archiveReaderSessionV1(scope: WorkspaceScope, sessionId: n
     await db.readerSessions.update(sessionId, { status: 'archived', updatedAt: Date.now() })
   })
 }
+
+/**
+ * P2 parent-link preflight. A P5 publication coordinator must call this
+ * again inside the commit transaction: IndexedDB FKs are not enforced by
+ * Dexie itself. No Work-wide session/turn lookup is an authorization grant.
+ */
+export async function assertReaderParentTurnV1(
+  scope: WorkspaceScope, sessionId: number, parentTurnId: number | null,
+): Promise<void> {
+  const session = await db.readerSessions.get(sessionId)
+  if (!session || session.projectId !== scope.projectId ||
+    session.workId !== scope.workId || session.status !== 'active') {
+    fail('reader parent session missing, foreign or not active')
+  }
+  if (session.headTurnId === null) {
+    if (parentTurnId !== null) fail('first reader turn cannot point to a foreign turn')
+    return
+  }
+  if (parentTurnId !== session.headTurnId) {
+    fail('parent turn must match the published session head')
+  }
+  const lineage = await ancestorPathToHead(session, scope.workId, scope.projectId)
+  if (!lineage.has(parentTurnId)) fail('reader parent turn is not on the active lineage')
+}
