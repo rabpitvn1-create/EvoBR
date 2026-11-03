@@ -168,6 +168,21 @@ describe('P4 Reader V01-V13 governed generation',()=>{
     expect(candidate.choices.generationAttempts).toBe(1)
     expect(candidate.choices.verifierResponseHash).toBeNull()
   })
+  it('V06 bounded retry: one deterministically invalid branch is retried without regenerating prose',async()=>{
+    const {scope,sid}=await fixture()
+    const bad=JSON.stringify({choices:[{
+      choiceKey:'fake',text:'Mở lối hầm',sourceQuote:'nguồn không tồn tại',
+    }]})
+    const order=scripted({'reader-prose':[prose],'reader-v3-review':[pass],
+      'reader-choices':[bad,branches],'reader-choice-verifier':[choicePass]})
+    const {candidate}=await generate(scope,sid,1)
+    expect(order).toEqual(['reader-prose','reader-v3-review','reader-choices',
+      'reader-choices','reader-choice-verifier'])
+    expect(candidate.modelCalls).toBe(5)
+    expect(candidate.choices.generationAttempts).toBe(2)
+    expect(candidate.choices.fallbackContinue).toBe(false)
+    expect(candidate.choices.choices[0].choiceKey).toBe('look-door')
+  })
   it('V07: malformed optional sceneHints never veto valid prose or branches',async()=>{
     const {scope,sid}=await fixture(),replies=good()
     replies['reader-choices']=[JSON.stringify({choices:[{
@@ -205,6 +220,22 @@ describe('P4 Reader V01-V13 governed generation',()=>{
     expect(order).toEqual(['reader-prose'])
     expect(await db.readerTurns.count()).toBe(0)
     expect(await db.readerPublicationRuns.count()).toBe(0)
+  })
+  it('V09: choice transport failure cannot be disguised as successful Continue',async()=>{
+    const {scope,sid}=await fixture()
+    const order=scripted({'reader-prose':[prose],'reader-v3-review':[pass],
+      'reader-choices':[]})
+    await expect(generate(scope,sid)).rejects.toThrow(/unavailable/)
+    expect(order).toEqual(['reader-prose','reader-v3-review','reader-choices'])
+    expect(await db.readerPublicationRuns.count()).toBe(0)
+  })
+  it('V08: unauthorised selected-decision text fails before dispatch',async()=>{
+    const {scope,sid}=await fixture(),order=scripted(good())
+    await expect(generateReaderTurnCandidateV1({
+      workspace:scope,sessionId:sid,expectedRevision:0,inputBudgetTokens:BUDGET,
+      maxBaselineBytes:BASELINE_CAP,config,selectedDecisionText:'Tự nhận vật phẩm chưa được đưa ra',
+    })).rejects.toThrow(/selected Reader choice/)
+    expect(order).toEqual([])
   })
   it('V10: same provider reviewer records correlatedJudge instead of false independence',async()=>{
     const {scope,sid}=await fixture();scripted(good())
