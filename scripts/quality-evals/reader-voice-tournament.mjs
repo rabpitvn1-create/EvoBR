@@ -117,9 +117,6 @@ async function generate(outRoot) {
     }
     manifest.status = 'completed'
     manifest.finishedAt = new Date().toISOString()
-    const entries = manifest.reports.flatMap(item => item.metrics.perTurn.flatMap(t =>
-      t.calls ? [] : [])) // per-turn shape remains available in every report
-    void entries
     await save()
     process.stdout.write('Completed four REAL 20-turn style chains. Tournament: ' + join(root, 'tournament-manifest.json') + '\n')
   } catch (error) {
@@ -174,8 +171,15 @@ async function pack(tournamentDir, blindDir, participant = 'Muse') {
       renderBlindReviewHtml(packet), { flag: 'wx' })
     await writeFile(join(root, 'participants', sampleCode + '.json'),
       outJson(packet), { flag: 'wx' })
+    // An empty incidents array is not a zero-error certification. Muse must
+    // inspect all 20 turns and explicitly change reviewed to true.
+    await writeFile(join(root, 'participants', sampleCode + '-canon-template.json'),
+      outJson({ schema: 'evobr.reader-voice-canon-audit', version: 1,
+        sampleCode, reviewer: 'Muse', reviewed: false, incidents: [] }), { flag: 'wx' })
     map.push({ sampleCode, profileId: row.profileId, profileHash: row.profileHash,
-      runId: row.report.runId, packetId: packet.packetId, contentHashes: packet.samples.map(x => x.contentHash) })
+      runId: row.report.runId, modelConfig: row.report.modelConfig,
+      systemPromptHash: row.report.systemPromptHash, metrics: row.metrics,
+      packetId: packet.packetId, contentHashes: packet.samples.map(x => x.contentHash) })
   }
   const key = {
     schema: 'evobr.reader-voice-organizer-key', version: 1, tournamentId: manifest.tournamentId,
@@ -240,7 +244,8 @@ async function rank(blindDir, scoringDir, output) {
       dimensions.voice >= 4.0 && confirmedCanonCount === 0 && uncertainCanonCount === 0
     results.push({
       sampleCode: m.sampleCode, profileId: m.profileId, profileHash: m.profileHash,
-      overallMean: overall, dimensions,
+      modelConfig: m.modelConfig, systemPromptHash: m.systemPromptHash,
+      modelMeasurements: m.metrics, overallMean: overall, dimensions,
       verifiedSeriousCanonIncidents: confirmedCanonCount, unresolvedCanonIncidents: uncertainCanonCount,
       incidents, qualified: eligible, turnsRated: valid.completed,
       perTurn: review.answers.map(a => ({
@@ -264,6 +269,18 @@ async function rank(blindDir, scoringDir, output) {
     schema: 'evobr.reader-voice-selection-result', version: 1, tournamentId: key.tournamentId,
     scoredBy: 'Muse', allProfiles: results,
     winner, decision: tied ? 'needs-Muse-tie-decision' : winner ? 'qualified-winner' : 'new-round-required',
+    aggregateMeasurements: {
+      calls: key.mapping.reduce((n, m) => n + m.metrics.calls, 0),
+      completedTurns: key.mapping.reduce((n, m) => n + m.metrics.turns, 0),
+      inputTokens: key.mapping.every(m => m.metrics.inputTokens !== null)
+        ? key.mapping.reduce((n, m) => n + m.metrics.inputTokens, 0) : null,
+      outputTokens: key.mapping.every(m => m.metrics.outputTokens !== null)
+        ? key.mapping.reduce((n, m) => n + m.metrics.outputTokens, 0) : null,
+      estimatedCostUSD: key.mapping.every(m => m.metrics.estimatedCostUSD !== null)
+        ? key.mapping.reduce((n, m) => n + m.metrics.estimatedCostUSD, 0) : null,
+      errors: Object.fromEntries([...new Set(key.mapping.flatMap(m => Object.keys(m.metrics.errors)))].map(k =>
+        [k, key.mapping.reduce((n, m) => n + (m.metrics.errors[k] || 0), 0)])),
+    },
     thresholds: { overallMean: 4, minimumEachDimension: 3.5, voiceMean: 4,
       maximumConfirmedCanonIncidents: 0, unresolvedIncidentsMustBeZero: true },
     note: 'Operational ceilings must be registered by Muse from real P1.2 measurements separately.',
