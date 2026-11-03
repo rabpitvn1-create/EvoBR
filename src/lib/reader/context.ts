@@ -161,8 +161,12 @@ async function selectSummary(
     if (!rows.length) continue
     const proof = await readerPrefixProofV1(lineage.turns.slice(0,prefixLength),records.decisions)
     for (const row of rows) {
-      if (row.lineageFingerprint===proof.lineageFingerprint &&
-        row.sourceTextHash===proof.sourceTextHash) {
+      let saga: {version?:number;summaryContentHash?:string;tasks?:Array<{taskKind:string;status:string}>}|null=null
+      try{saga=JSON.parse(row.continuityJson)}catch{saga=null}
+      if(row.lineageFingerprint===proof.lineageFingerprint &&
+        row.sourceTextHash===proof.sourceTextHash && saga?.version===1 &&
+        saga.tasks?.some(t=>t.taskKind==='summary'&&t.status==='completed') &&
+        saga.summaryContentHash===await sha256Text(row.summary)) {
         return {memory:row,prefixLength}
       }
     }
