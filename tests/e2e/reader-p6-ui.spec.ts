@@ -56,7 +56,7 @@ test('P6: session → opening → choice → next turn → reload → old-turn f
   await page.getByRole('button',{name:'+ Tạo mới'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(1,{timeout:45_000})
   await expect(page.getByText(story[0])).toBeVisible()
-  await expect(page.getByRole('button',{name:'Quan sát cánh cửa'})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Quan sát cánh cửa'})).toBeEnabled()
   await page.getByRole('button',{name:'Quan sát cánh cửa'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(2,{timeout:45_000})
   await expect(page.getByText(story[1])).toBeVisible()
