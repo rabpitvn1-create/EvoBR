@@ -180,14 +180,23 @@ AI 输出只可提议这里登记的规范字段。普通写回经 `adopt({ targ
 | `outlineNodes` | `order` `parentId` `summary` `title` `type` `worldGroupId` |
 | `powerSystems` | `description` `levels` `name` `rules` |
 | `projects` | `enableMultiWorld` `name` |
+| `readerChoices` | `choiceKey` `kind` `order` `sessionId` `status` `text` `turnId` |
+| `readerDecisions` | `choiceId` `requestKey` `resultTurnId` `sessionId` `sourceTurnId` |
+| `readerFacts` | `evidenceQuote` `originTurnId` `predicate` `sessionId` `sourceHash` `status` `subjectRef` `valueJson` |
+| `readerKnowledge` | `characterId` `knowledgeKey` `originTurnId` `sessionId` `sourceQuote` `statement` `status` |
+| `readerMemory` | `continuityJson` `lineageFingerprint` `processingRunId` `sessionId` `sourceTextHash` `status` `summary` `summaryPolicyVersion` `throughTurnId` |
+| `readerPublicationRuns` | `candidateHash` `contextManifestHash` `expectedSessionRevision` `receiptJson` `requestFingerprint` `requestKey` `resultTurnId` `runId` `semanticArtifactHash` `sessionId` `status` |
+| `readerRetrievalChunks` | `content` `contentHash` `sessionId` `sourceQuote` `sourceTurnId` |
+| `readerSessions` | `canonBaselineHash` `canonBaselineRef` `canonBaselineSnapshotJson` `forkTurnId` `headTurnId` `memoryReadyThroughTurnId` `parentSessionId` `revision` `status` |
+| `readerTurns` | `content` `contentHash` `parentTurnId` `sceneHintsJson` `sessionId` `status` `turnOrdinal` |
 | `referenceAnalysisRuns` | `activatedAt` `analysisSummary` `completedAt` `completedChunks` `depth` `error` `expectedChunks` `fileHash` `mergedCharacters` `progress` `referenceId` `rightsConfirmed` `rightsDeclaredAt` `rightsNote` `sourceFilename` `sourceKind` `status` `totalChars` `usageScope` `version` |
 | `referenceChunkAnalysis` | `analysisRunId` `characterCraft` `chunkIndex` `climaxDesign` `conflictEscalation` `dailyLife` `dialogueTechnique` `emotionalBeats` `endOffset` `foreshadowing` `historicalContext` `label` `languageCustoms` `materialCulture` `narrativeStyle` `openingTechnique` `otherTechniques` `pacingControl` `plotStructure` `proseStyle` `rawExcerpt` `referenceId` `socialInstitutions` `startOffset` `worldBuilding` |
 | `references` | `analysisDepth` `analysisError` `analysisProgress` `analysisStatus` `analysisSummary` `fileHash` `genre` `importSessionId` `mergedCharacters` `totalChars` |
 | `stateCards` | `category` `entityName` `fields` `lastChapterId` |
 | `storyArcs` | `description` `lastAlignedHash` `name` `narrativeDependenciesV1` `narrativeDevelopmentsV1` `narrativeEvidenceV1` `narrativeModalityV1` `narrativeTimeV1` `narrativeVisibilityV1` `origin` `producerCandidateHash` `producerRunId` `sourceStoryCoreHash` `sourceStoryCoreId` `sourceStoryCoreRevision` `stages` `status` `type` |
-| `storyTimelineEvents` | `chapterId` `chapterTitle` `description` `importance` `narrativeDependenciesV1` `narrativeEventV1` `narrativeEvidenceV1` `narrativeModalityV1` `narrativeTimeV1` `narrativeVisibilityV1` `order` `storyTime` `title` |
 | `storylineCrossings` | `arcIdA` `arcIdB` `chapterId` `chapterTitle` `evidenceQuote` `note` |
 | `storylineProgress` | `arcId` `currentStageId` `evidenceQuote` `involvedEntities` `lastActiveChapterId` `lastActiveChapterTitle` `narrativeDependenciesV1` `narrativeDevelopmentsV1` `narrativeEvidenceV1` `narrativeModalityV1` `narrativeTimeV1` `narrativeVisibilityV1` `progressNote` `status` |
+| `storyTimelineEvents` | `chapterId` `chapterTitle` `description` `importance` `narrativeDependenciesV1` `narrativeEventV1` `narrativeEvidenceV1` `narrativeModalityV1` `narrativeTimeV1` `narrativeVisibilityV1` `order` `storyTime` `title` |
 | `temporalFacts` | `narrativeAssertionV1` `narrativeDependenciesV1` `narrativeEvidenceV1` `narrativeModalityV1` `narrativeRuleV1` `narrativeTimeV1` `narrativeVisibilityV1` |
 | `userStyleProfiles` | `enabled` `profile` `sampleCount` `sampleWords` `sourceChapterIds` |
 | `works` | `customGenre` `description` `genres` `includeCultivationProgressInAI` `methodologyId` `status` `targetWordCount` `title` `writingStyleId` |
