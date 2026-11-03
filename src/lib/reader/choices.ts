@@ -1,7 +1,7 @@
 /** P4 choices are generated strictly after the V3-approved prose is frozen. */
 import type { ChatMessage } from '../types'
 import { wholeJSONContainerTextV1 } from '../ai/whole-json-container'
-import { normalizeReaderSceneHintsV1, type ReaderSceneHintsV1 } from './stage-assets'
+import { normalizeReaderSceneHintsV1, READER_STAGE_ASSETS_V1, type ReaderSceneHintsV1 } from './stage-assets'
 import type { AIRequestConfigResolution } from '../ai/client'
 import { hashCanonicalValue, canonicalStringify } from '../agent/run/hash'
 import { recordAgentRunArtifactV1 } from '../memory/artifact-store'
@@ -136,8 +136,14 @@ export function buildReaderChoiceMessagesV1(
       'Bạn tạo LỰA CHỌN ĐỌC TIẾP cho truyện Reader tiếng Việt, không viết lại văn xuôi.',
       'Chỉ tạo cơ hội hành động khả thi từ prose đã đóng băng. Không thêm lore/nhân vật Canon có tên.',
       'Không ép kết thúc, không ép nhiệm vụ. Mỗi nhánh phải gắn sourceQuote nguyên văn trong prose.',
-      'Chỉ xuất JSON: {"choices":[{"choiceKey":"id","text":"hành động","sourceQuote":"trích prose nguyên văn"}]}.',
-      'Không có lựa chọn hợp lệ thì trả {"choices":[]}. sceneHints tùy chọn, không có thẩm quyền.',
+      'Chỉ xuất MỘT JSON object: {"choices":[{"choiceKey":"id","text":"hành động","sourceQuote":"trích prose nguyên văn"}],"sceneHints":{"levelId":"level-0","entityIds":[]}}.',
+      'Trường sceneHints PHẢI có mặt: object nếu finalProse đã xác lập rõ một LEVEL hợp lệ, ngược lại null.',
+      'Chỉ đọc finalProse ĐÃ DUYỆT để chọn sceneHints; không suy từ baseline, ký ức, lời gọi trước hoặc tên gần giống.',
+      'LEVEL được phép: '+Object.keys(READER_STAGE_ASSETS_V1.levels).join(', ')+'.',
+      'Thực thể được phép: '+Object.keys(READER_STAGE_ASSETS_V1.entities).join(', ')+'.',
+      'Nếu finalProse mô tả rõ thực thể có ID hợp lệ, thêm vào entityIds; không rõ thì dùng [].',
+      'Không cấp URL, không tự đổi LEVEL, không thêm Canon. Nếu thiếu chứng cứ thì sceneHints:null.',
+      'Không có lựa chọn hợp lệ thì choices:[]; sceneHints vẫn phải có khóa, dù là null.',
     ].join('\n')},
     {role:'user',content:'Gateway session: '+handle.identity.sessionId+
       '\nManifest: '+handle.frozen.contextManifestHash+
