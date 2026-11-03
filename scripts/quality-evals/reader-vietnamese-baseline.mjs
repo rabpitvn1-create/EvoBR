@@ -208,7 +208,8 @@ function summarize(turns, config) {
   // A failed dispatched call can still be billed. Never label a partial
   // observed-cost figure as a complete invoice or a definitive total.
   const failedDispatched = attempts.some(item => !item.ok && item.lifecycle?.phase !== 'pre-dispatch')
-  const estimateUSD = failedDispatched ? null : estimatedSuccessCostUSD
+  const completeTwentyTurns = turns.length === TOTAL_TURNS && turns.every(turn => turn.status === 'completed')
+  const estimateUSD = failedDispatched || !completeTwentyTurns ? null : estimatedSuccessCostUSD
   return {
     completedTurns: turns.filter(t => t.status === 'completed').length,
     expectedTurns: TOTAL_TURNS,
@@ -220,6 +221,7 @@ function summarize(turns, config) {
     outputTokensMeasured: totalOutputTokens,
     estimatedCostUSD: estimateUSD,
     pricingStatus: failedDispatched ? 'unknown-billing-for-failed-dispatched-call'
+      : !completeTwentyTurns ? 'incomplete-20-turn-benchmark'
       : estimateUSD === null ? 'unpriced-or-provider-usage-missing' : 'estimated-from-user-supplied-prices',
     observedSuccessfulCallCostUSD: estimatedSuccessCostUSD,
     latencyMs: { p50: percentile(durations, 0.5), p95: percentile(durations, 0.95) },
