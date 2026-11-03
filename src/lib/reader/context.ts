@@ -14,6 +14,7 @@ import type {
 import type { WorkspaceScope } from '../types/world-ownership'
 import type { ReaderTurnV1, ReaderDecisionV1, ReaderMemoryV1 } from '../types/reader'
 import { resolveReaderLineageV1, type ReaderVisibleLineageV1 } from './lineage'
+import { assertReaderFactNonconflictingV1 } from './confirmation'
 import { READER_SOURCE_KEYS_V1, READER_SELECTION_POLICY_V1 } from './gateway-sources'
 import { invalidateContextGatewayCacheV1 } from '../context-gateway/provider-cache'
 
@@ -92,11 +93,18 @@ async function collectRecords(lineage: ReaderVisibleLineageV1): Promise<Verified
     const turn = path.get(row.originTurnId)!.turn
     if (!row.evidenceQuote?.trim() || !turn.content.includes(row.evidenceQuote) ||
       row.sourceHash!==turn.contentHash) fail('confirmed Reader fact provenance mismatch')
+    assertReaderFactNonconflictingV1(row,confirmedFacts.filter(f=>f.id!==row.id),lineage.session.canonBaselineSnapshotJson)
     verifiedFacts.push({sessionId:row.sessionId,originTurnId:row.originTurnId,
       predicate:row.predicate,subjectRef:row.subjectRef,valueJson:row.valueJson,
       evidenceQuote:row.evidenceQuote,sourceHash:row.sourceHash})
   }
   const confirmedKnowledge = allRowsOnPath(lineage,knowledge.filter(k=>k.status==='confirmed'),'originTurnId')
+  for(const item of confirmedKnowledge) {
+    if(confirmedKnowledge.some(other=>other.id!==item.id&&other.characterId===item.characterId&&
+      other.knowledgeKey===item.knowledgeKey&&other.statement!==item.statement)) {
+      fail('conflicting confirmed Reader knowledge on one visible path')
+    }
+  }
   const verifiedKnowledge: unknown[] = []
   for (const row of confirmedKnowledge) {
     const turn = path.get(row.originTurnId)!.turn
