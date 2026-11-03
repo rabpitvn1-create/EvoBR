@@ -3,7 +3,6 @@
  * P3 Context Gateway and P5 Publication Gate consume these boundaries;
  * no model calls or chapter writes occur here.
  */
-import Dexie from 'dexie'
 import { db } from '../db/schema'
 import { PROJECT_TABLES } from '../registry/project-tables'
 import { readOwnedRows } from '../workspace/scope'
