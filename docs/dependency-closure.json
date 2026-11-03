@@ -641,12 +641,18 @@
     "src/lib/prose/scene-craft.ts",
     "src/lib/prose/system-fiction-contract.ts",
     "src/lib/reader/baseline.ts",
+    "src/lib/reader/choices.ts",
     "src/lib/reader/confirmation.ts",
     "src/lib/reader/context.ts",
     "src/lib/reader/gateway-sources.ts",
+    "src/lib/reader/generation.ts",
     "src/lib/reader/import-integrity.ts",
     "src/lib/reader/lineage.ts",
     "src/lib/reader/memory-saga.ts",
+    "src/lib/reader/model.ts",
+    "src/lib/reader/prose.ts",
+    "src/lib/reader/run.ts",
+    "src/lib/reader/semantic-review.ts",
     "src/lib/reference-analysis/derived-agent-baseline.ts",
     "src/lib/reference-analysis/derived-agent-plan.ts",
     "src/lib/reference-analysis/lifecycle.ts",
@@ -20260,6 +20266,47 @@
         }
       ]
     },
+    "src/lib/reader/choices.ts": {
+      "parent": "src/lib/reader/generation.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/client.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/memory/artifact-store.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/model.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/prose.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/run.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/run.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        }
+      ]
+    },
     "src/lib/reader/confirmation.ts": {
       "parent": "src/lib/reader/context.ts",
       "dependencies": [
@@ -20355,6 +20402,59 @@
         }
       ]
     },
+    "src/lib/reader/generation.ts": {
+      "parent": "src/lib/registry/assemble-context.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/run/event-store.ts",
+          "kind": "dynamic"
+        },
+        {
+          "path": "src/lib/agent/run/event-store.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/memory/artifact-store.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/choices.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/model.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/prose.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/run.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/semantic-review.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        }
+      ]
+    },
     "src/lib/reader/import-integrity.ts": {
       "parent": "src/lib/export/registry-import.ts",
       "dependencies": [
@@ -20430,6 +20530,154 @@
         },
         {
           "path": "src/lib/types/world-ownership.ts",
+          "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/model.ts": {
+      "parent": "src/lib/reader/generation.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/formal-ai-entry.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/skill-registry.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/client.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/run.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/run.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/prose.ts": {
+      "parent": "src/lib/reader/generation.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/run.ts": {
+      "parent": "src/lib/reader/generation.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/execution-binding.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/formal-ai-entry.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/run/event-store.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/skill-registry.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/context-budget.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/memory/artifact-store.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/gateway-sources.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/agent-run.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/semantic-review.ts": {
+      "parent": "src/lib/reader/generation.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/prose-semantic-review.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/run/event-store.ts",
+          "kind": "dynamic"
+        },
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/agent/team-budget.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/client.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/memory/artifact-store.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/model.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/prose.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/run.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/run.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/agent-run.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/index.ts",
           "kind": "type"
         }
       ]
@@ -20654,6 +20902,10 @@
         },
         {
           "path": "src/lib/reader/gateway-sources.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/generation.ts",
           "kind": "module"
         },
         {
