@@ -47,6 +47,11 @@ const metricsFromReport = report => {
     latencyMs: { p50: pctl(latency, .5), p95: pctl(latency, .95) },
     errors,
     perTurn: report.summary.turns,
+    attemptsByTurn: report.turns.map(turn => ({
+      turn: turn.turn, durationMs: turn.durationMs, retries: turn.retries,
+      attempts: turn.attempts,
+    })),
+    totalElapsedMs: report.turns.reduce((n, turn) => n + turn.durationMs, 0),
   }
 }
 function assertProfileReport(report, id, expectedScenarioHash = null, expectedModel = null) {
@@ -270,6 +275,13 @@ async function rank(blindDir, scoringDir, output) {
     winner, decision: tied ? 'needs-Muse-tie-decision' : winner ? 'qualified-winner' : 'new-round-required',
     aggregateMeasurements: {
       calls: key.mapping.reduce((n, m) => n + m.metrics.calls, 0),
+      retries: key.mapping.reduce((n, m) => n + m.metrics.retries, 0),
+      elapsedMs: key.mapping.reduce((n, m) => n + m.metrics.totalElapsedMs, 0),
+      latencyMs: (() => {
+        const durations = key.mapping.flatMap(m => m.metrics.attemptsByTurn.flatMap(t =>
+          t.attempts.filter(a => a.ok).map(a => a.durationMs)))
+        return { p50: pctl(durations, .5), p95: pctl(durations, .95) }
+      })(),
       completedTurns: key.mapping.reduce((n, m) => n + m.metrics.turns, 0),
       inputTokens: key.mapping.every(m => m.metrics.inputTokens !== null)
         ? key.mapping.reduce((n, m) => n + m.metrics.inputTokens, 0) : null,
