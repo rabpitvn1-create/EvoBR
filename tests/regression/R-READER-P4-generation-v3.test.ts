@@ -169,7 +169,7 @@ describe('P4 Reader V01-V13 governed generation',()=>{
   })
   it('V13: whole JSON fences preserve choices, verifier and V3 review semantics',async()=>{
     const {scope,sid}=await fixture(),{handle}=await frozenHandle(scope,sid)
-    const fenced=(value:string)=>'```json\\n'+value+'\\n```'
+    const fenced=(value:string)=>'```json\n'+value+'\n```'
     const plainChoices=parseReaderBranchChoicesV1(branches,prose)
     expect(parseReaderBranchChoicesV1(fenced(branches),prose)).toEqual(plainChoices)
     const item=plainChoices.choices[0]
