@@ -1,3 +1,4 @@
+import { wholeJSONContainerTextV1 } from '../ai/whole-json-container'
 import type { ChatMessage } from '../types'
 import type { AssembleContextResult } from '../registry/types'
 import type { GenerationGateIssue } from '../generation/generation-node'
@@ -109,10 +110,11 @@ function formatReviewContext(segments: readonly ReviewSegmentV1[]): string {
 }
 
 function parseJsonObject(raw: string): Record<string, unknown> {
-  const start = raw.indexOf('{')
-  const end = raw.lastIndexOf('}')
-  if (start < 0 || end <= start) throw new Error('语义评审没有返回 JSON 对象。')
-  const parsed = JSON.parse(raw.slice(start, end + 1)) as unknown
+  const container = wholeJSONContainerTextV1(raw, '语义评审')
+  if (!container.startsWith('{') || !container.endsWith('}')) {
+    throw new Error('语义评审没有返回 JSON 对象。')
+  }
+  const parsed = JSON.parse(container) as unknown
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('语义评审 JSON 根节点必须是对象。')
   }
