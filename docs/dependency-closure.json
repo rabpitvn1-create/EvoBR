@@ -692,7 +692,6 @@
     "src/lib/style/style-learning.ts",
     "src/lib/theme-bootstrap.ts",
     "src/lib/theme.ts",
-    "src/lib/types.ts",
     "src/lib/types/agent-run.ts",
     "src/lib/types/agent-session.ts",
     "src/lib/types/ai.ts",
