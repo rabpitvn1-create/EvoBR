@@ -32,7 +32,7 @@
 .ebr-reader-paper{border:1px solid var(--ebr-line);border-radius:18px;background:var(--ebr-paper);box-shadow:0 15px 40px rgba(0,0,0,.2);padding:24px 20px 10px}
 .ebr-reader-turn{font-family:Georgia,'Times New Roman','Noto Serif','Droid Serif',serif;border-bottom:1px solid var(--ebr-line);padding:4px 0 28px;margin-bottom:26px;scroll-margin-top:12px;min-width:0}
 .ebr-reader-turn:last-child{border-bottom:0;margin-bottom:0}
-.ebr-reader-turn p{font-size:18px;line-height:1.8;letter-spacing:.005em;text-indent:1.5em;margin:0 0 1em;white-space:pre-wrap;overflow-wrap:anywhere}
+.ebr-reader-turn p{font-size:15px;line-height:2.2;letter-spacing:.005em;text-indent:1.5em;margin:0 0 .5em;white-space:pre-wrap;overflow-wrap:anywhere}
 .ebr-reader-turn-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font:11px system-ui,sans-serif;letter-spacing:.05em;color:var(--ebr-muted);margin-bottom:16px}
 .ebr-reader-turn-menu{position:relative}
 .ebr-reader-overflow{width:44px;height:44px;border:1px solid var(--ebr-line);color:var(--ebr-accent);border-radius:12px;font-size:23px!important;line-height:1}
@@ -51,15 +51,15 @@
 
 /* Stage sits inside the HEAD article only. Reserve geometry before images load. */
 .ebr-stage{position:relative;display:block;overflow:visible;pointer-events:none;
-  height:220px;width:calc(100% + 42px);max-width:calc(100vw - 32px);
-  margin:44px 0 26px -21px;padding:0}
+  height:140px;width:calc(100% + 42px);max-width:calc(100vw - 32px);
+  margin:80px 0 64px -21px;padding:0}
 .ebr-stage-window{position:absolute;inset:0;border-radius:20px;overflow:hidden;
   border:1px solid rgba(232,203,152,.35);background:#25231f}
 .ebr-stage-background{display:block;width:100%;height:100%;object-fit:cover}
 .ebr-stage-actors{position:absolute;inset:0;overflow:visible;pointer-events:none}
-.ebr-stage-protagonist{position:absolute;right:12px;top:-40px;width:172px;height:260px;max-width:45%;
+.ebr-stage-protagonist{position:absolute;right:1px;top:-80px;width:172px;height:260px;max-width:45%;
   object-fit:contain;object-position:bottom right;filter:drop-shadow(1px 9px 10px rgba(0,0,0,.6))}
-.ebr-stage-entity{position:absolute;left:12px;bottom:-12px;width:110px;height:110px;object-fit:contain;
+.ebr-stage-entity{position:absolute;left:0;bottom:-31px;width:180px;height:180px;object-fit:contain;
   object-position:bottom left;filter:drop-shadow(0 7px 9px rgba(0,0,0,.65))}
 @media(min-width:760px){
   .ebr-reader{padding-top:30px}
