@@ -12,7 +12,7 @@ import {hashCanonicalValue} from '../../src/lib/agent/run/hash'
 import {generateReaderTurnCandidateV1,verifyReaderGenerationCandidateV1,
   ReaderSemanticBlockedErrorV1} from '../../src/lib/reader/generation'
 import {parseReaderBranchChoicesV1,parseReaderChoiceReviewV1,
-  buildReaderChoiceMessagesV1} from '../../src/lib/reader/choices'
+  buildReaderChoiceMessagesV1,runReaderChoiceStageV1} from '../../src/lib/reader/choices'
 import {prepareReaderContextV1} from '../../src/lib/reader/context'
 import {createReaderDurableRunV1,assertReaderFrozenStageInputV1} from '../../src/lib/reader/run'
 import {getAgentSkillV1} from '../../src/lib/agent/skill-registry'
@@ -20,7 +20,7 @@ import {freezeFormalAIEntryBindingV1,executeFrozenFormalAIEntryV1,
   getFormalAIEntryBindingV1} from '../../src/lib/agent/formal-ai-entry'
 import {buildProseGenerationRunContractV1} from '../../src/lib/agent/run/prose-generation-durable'
 import {buildReaderProseMessagesV1,READER_PROSE_SYSTEM_PROMPT_V1} from '../../src/lib/reader/prose'
-import {callReaderModelV1} from '../../src/lib/reader/model'
+import {callReaderModelV1,resolveFrozenReaderModelV1} from '../../src/lib/reader/model'
 import type {WorkspaceScope,AIConfig} from '../../src/lib/types'
 
 vi.mock('../../src/lib/reader/model',async importActual=>{
@@ -134,6 +134,19 @@ describe('P4 Reader V01-V13 governed generation',()=>{
       'reader-v3-review':[blockingReview('reader.baseline','không hề có trong nguồn Canon')]})
     await expect(generate(scope,sid)).rejects.toThrow(/逐字引文|invalid|quote/)
     expect(order).toEqual(['reader-prose','reader-v3-review'])
+  })
+  it('V03: direct choice-stage caller cannot bypass a signed V3 PASS',async()=>{
+    const {scope,sid}=await fixture(),{handle}=await frozenHandle(scope,sid)
+    scripted(good())
+    const finalProseHash=await hashCanonicalValue(prose)
+    await expect(runReaderChoiceStageV1({
+      handle,finalProse:prose,finalProseHash,
+      originalProse:prose,
+      v3:{status:'passed',runId:handle.snapshot.run.id} as any,
+      resolution:resolveFrozenReaderModelV1(config),
+      maxChoiceRetries:0,
+    })).rejects.toThrow(/choices denied without verified/)
+    expect(vi.mocked(callReaderModelV1)).not.toHaveBeenCalled()
   })
   it('V04: invented branch quote is dropped deterministically',()=>{
     const parsed=parseReaderBranchChoicesV1(JSON.stringify({choices:[
