@@ -5,6 +5,7 @@
  */
 import { db } from '../db/schema'
 import { hashCanonicalValue } from '../agent/run/hash'
+import { sha256Text } from '../ai/chapter-memory/text-normalization'
 import type { WorkspaceScope } from '../types/world-ownership'
 import { readerMemoryWindowProofV1, READER_SUMMARY_POLICY_V1 } from './context'
 import { resolveReaderLineageV1 } from './lineage'
@@ -24,6 +25,7 @@ interface MemoryTaskV1 {
 }
 interface MemorySagaReceiptV1 {
   version:1
+  summaryContentHash?:string
   sagaStatus:ReaderMemorySagaStatusV1
   tasks:MemoryTaskV1[]
 }
@@ -87,6 +89,8 @@ export async function settleReaderMemoryTaskV1(input:{
   if(!READER_MEMORY_TASK_KINDS_V1.includes(input.taskKind))fail('unknown saga task kind')
   const proof=await readerMemoryWindowProofV1(input.workspace,input.sessionId,input.throughTurnId)
   if(proof.sourceTextHash!==input.sourceHash)fail('stale task source hash')
+  const submittedSummaryHash=input.taskKind==='summary'&&input.outcome==='completed'&&input.summary
+    ? await sha256Text(input.summary) : undefined
   let next:MemorySagaReceiptV1|undefined
   await db.transaction('rw',db.readerMemory,db.readerSessions,async()=>{
     const row=await db.readerMemory.where('[sessionId+throughTurnId]').equals([input.sessionId,input.throughTurnId]).first()
@@ -98,7 +102,8 @@ export async function settleReaderMemoryTaskV1(input:{
     const task=receipt.tasks.find(t=>t.taskKind===input.taskKind)
     if(!task||task.taskId!==input.taskId||task.sourceHash!==input.sourceHash)fail('saga task identity invalid')
     if(task.status!=='pending') {
-      if(task.status!==input.outcome)fail('conflicting retry for settled saga task')
+      if(task.status!==input.outcome || (input.taskKind==='summary'&&input.outcome==='completed'&&
+        submittedSummaryHash!==receipt.summaryContentHash))fail('conflicting retry for settled saga task')
       next=receipt
       return
     }
@@ -106,6 +111,7 @@ export async function settleReaderMemoryTaskV1(input:{
       fail('ready summary requires real nonempty content')
     }
     task.status=input.outcome
+    if(input.taskKind==='summary'&&input.outcome==='completed')receipt.summaryContentHash=submittedSummaryHash
     if(input.outcome==='failed')task.error=input.error?.slice(0,500)||'unspecified-task-error'
     receipt.sagaStatus=sagaState(receipt.tasks)
     const summary=input.taskKind==='summary'&&input.outcome==='completed'?input.summary!:row.summary
