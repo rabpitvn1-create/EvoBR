@@ -1,3 +1,4 @@
+import { wholeJSONContainerTextV1 } from '../ai/whole-json-container'
 import type { ChatMessage } from '../types'
 import type { AssembleContextResult } from '../registry/types'
 import type { GenerationGateIssue } from '../generation/generation-node'
@@ -11,6 +12,9 @@ import {
 
 export const PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1 = 'prose-semantic-review-v2'
 export const PROSE_SEMANTIC_REVISION_PROMPT_VERSION_V1 = 'prose-semantic-revision-v2'
+/** Reader Vietnamese prompts are opt-in; chapter editor keeps its exact V2 prompts. */
+export const READER_SEMANTIC_REVIEW_PROMPT_VERSION_V1 = 'reader-semantic-review-vi-v1'
+export const READER_SEMANTIC_REVISION_PROMPT_VERSION_V1 = 'reader-semantic-revision-vi-v1'
 
 type ProseSemanticExecutionBinding = AgentSkillExecutionBindingV1 | AgentSkillExecutionBindingV2
 
@@ -47,7 +51,7 @@ export interface ProseSemanticReviewIssueV1 {
 export interface ProseSemanticReviewerIdentityV1 {
   provider: string
   model: string
-  promptVersion: typeof PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1
+  promptVersion: typeof PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1 | typeof READER_SEMANTIC_REVIEW_PROMPT_VERSION_V1
   executionBinding: ProseSemanticExecutionBinding
   correlatedJudge: boolean
 }
@@ -106,10 +110,11 @@ function formatReviewContext(segments: readonly ReviewSegmentV1[]): string {
 }
 
 function parseJsonObject(raw: string): Record<string, unknown> {
-  const start = raw.indexOf('{')
-  const end = raw.lastIndexOf('}')
-  if (start < 0 || end <= start) throw new Error('语义评审没有返回 JSON 对象。')
-  const parsed = JSON.parse(raw.slice(start, end + 1)) as unknown
+  const container = wholeJSONContainerTextV1(raw, '语义评审')
+  if (!container.startsWith('{') || !container.endsWith('}')) {
+    throw new Error('语义评审没有返回 JSON 对象。')
+  }
+  const parsed = JSON.parse(container) as unknown
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('语义评审 JSON 根节点必须是对象。')
   }
@@ -310,6 +315,9 @@ export async function verifyProseSemanticReviewArtifactV1(input: {
   candidateText?: string
   candidateTextHash?: string
   contextManifestHash?: string
+  /** Reader receipts must never be accepted as chapter receipts, or vice versa. */
+  expectedSkillId?: 'prose.review' | 'reader.prose.review'
+  expectedPromptVersion?: typeof PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1 | typeof READER_SEMANTIC_REVIEW_PROMPT_VERSION_V1
 }): Promise<boolean> {
   try {
     const artifact = input.artifact
@@ -317,9 +325,9 @@ export async function verifyProseSemanticReviewArtifactV1(input: {
       artifact.version !== 1
       || artifact.type !== 'prose-semantic-review'
       || ![1, 2].includes(artifact.round)
-      || artifact.reviewer.promptVersion !== PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1
-      || artifact.reviewer.executionBinding.promptVersion !== PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1
-      || artifact.reviewer.executionBinding.skillId !== 'prose.review'
+      || artifact.reviewer.promptVersion !== (input.expectedPromptVersion ?? PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1)
+      || artifact.reviewer.executionBinding.promptVersion !== (input.expectedPromptVersion ?? PROSE_SEMANTIC_REVIEW_PROMPT_VERSION_V1)
+      || artifact.reviewer.executionBinding.skillId !== (input.expectedSkillId ?? 'prose.review')
       || artifact.candidateTextHash !== (
         input.candidateTextHash ?? await hashCanonicalValue(input.candidateText ?? '')
       )
@@ -368,6 +376,11 @@ export async function runProseSemanticReviewCycleV1(input: {
   chapterTitle: string
   originalText: string
   generationMessages: readonly ChatMessage[]
+  /** Reader only: custom Vietnamese prompts; absent preserves chapter prompts byte-for-byte. */
+  promptBuilders?: {
+    review: (input: { chapterTitle: string; candidateText: string; assembled: AssembleContextResult }) => ChatMessage[]
+    revision: (input: { generationMessages: readonly ChatMessage[]; candidateText: string; review: ProseSemanticReviewArtifactV1 }) => ChatMessage[]
+  }
   assembled: AssembleContextResult
   contextManifestHashes: { initial: string; final: string }
   reviewer: ProseSemanticReviewerIdentityV1
@@ -391,7 +404,7 @@ export async function runProseSemanticReviewCycleV1(input: {
   const now = input.now ?? Date.now
   const reviewOnce = async (candidateText: string, round: 1 | 2) => {
     const phase = round === 1 ? 'review' as const : 'rereview' as const
-    const messages = buildProseSemanticReviewPromptV1({
+    const messages = (input.promptBuilders?.review ?? buildProseSemanticReviewPromptV1)({
       chapterTitle: input.chapterTitle,
       candidateText,
       assembled: input.assembled,
@@ -454,7 +467,7 @@ export async function runProseSemanticReviewCycleV1(input: {
     }
   }
 
-  const revisionMessages = buildProseSemanticRevisionPromptV1({
+  const revisionMessages = (input.promptBuilders?.revision ?? buildProseSemanticRevisionPromptV1)({
     generationMessages: input.generationMessages,
     candidateText: input.originalText,
     review: initialReview,
@@ -522,10 +535,11 @@ export async function runProseSemanticReviewCycleV1(input: {
 
 export async function verifyProseSemanticRevisionArtifactV1(
   artifact: ProseSemanticRevisionArtifactV1,
+  options: { expectedSkillId?: 'prose.revise' | 'reader.prose.revise'; expectedPromptVersion?: string } = {},
 ): Promise<boolean> {
   return artifact.version === 1
     && artifact.type === 'prose-semantic-revision'
-    && artifact.executionBinding.skillId === 'prose.revise'
-    && artifact.executionBinding.promptVersion === PROSE_SEMANTIC_REVISION_PROMPT_VERSION_V1
+    && artifact.executionBinding.skillId === (options.expectedSkillId ?? 'prose.revise')
+    && artifact.executionBinding.promptVersion === (options.expectedPromptVersion ?? PROSE_SEMANTIC_REVISION_PROMPT_VERSION_V1)
     && artifact.artifactHash === await hashCanonicalValue(revisionArtifactBody(artifact))
 }

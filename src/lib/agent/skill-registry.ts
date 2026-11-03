@@ -220,6 +220,24 @@ export interface AgentSkillDefinitionV1 {
   regressionTests: readonly string[]
 }
 
+const READER_PRODUCTION_SOURCE_KEYS = [
+  "reader.baseline",
+  "reader.published-history",
+  "reader.decisions",
+  "reader.confirmed-facts",
+  "reader.confirmed-knowledge",
+  "reader.continuity",
+  "reader.retrieval"
+] as const
+const READER_PRODUCTION_INPUT_POLICY: AgentSkillInputPolicyV1 = {
+  sourceKeys: ['reader.baseline', 'reader.published-history', 'reader.decisions', 'reader.continuity'],
+  states: {
+    empty: { handling: 'require-upstream', instruction: 'Thiếu bản Canon hoặc ký ức reader: không sinh nội dung.' },
+    partial: { handling: 'require-upstream', instruction: 'Chỉ xử lý khi nguồn reader bắt buộc đã được xác thực.' },
+    complete: { handling: 'grounded-transform', instruction: 'Chỉ sử dụng gói Gateway reader đã đóng băng; không đọc nguồn chương.' },
+  },
+}
+
 const OUTLINE_CONTEXT_SOURCE_KEYS = [
   'ragSelection',
 ] as const
@@ -1118,6 +1136,82 @@ const PROSE_STYLE_LEARNING_COMPRESSION_POLICY = compressionPolicy(['styleLearnin
 
 
 export const AGENT_SKILLS = [
+  {
+    version: 1,
+    id: 'reader.prose.generate',
+    agentId: 'prose', defaultForAgent: false,
+    label: 'Reader reader.prose.generate', owner: 'reader-production',
+    promptVersion: 'reader-prose-restrained-intimate-vi-v1', executionMode: 'generate',
+    contextTaskKind: 'agent-prose', readToolNames: [],
+    contextSourceKeys: READER_PRODUCTION_SOURCE_KEYS,
+    optionalContextSourceKeys: [],
+    inputPolicy: READER_PRODUCTION_INPUT_POLICY,
+    contextCompression: compressionPolicy(READER_PRODUCTION_SOURCE_KEYS),
+    maxOutputTokens: 1800, writeTargets: [],
+    lastVerifiedAt: '2026-11-03',
+    regressionTests: ['R-READER-P4-generation-v3'],
+  },
+  {
+    version: 1,
+    id: 'reader.prose.review',
+    agentId: 'prose', defaultForAgent: false,
+    label: 'Reader reader.prose.review', owner: 'reader-production',
+    promptVersion: 'reader-semantic-review-vi-v1', executionMode: 'review',
+    contextTaskKind: 'agent-prose', readToolNames: [],
+    contextSourceKeys: READER_PRODUCTION_SOURCE_KEYS,
+    optionalContextSourceKeys: [],
+    inputPolicy: READER_PRODUCTION_INPUT_POLICY,
+    contextCompression: compressionPolicy(READER_PRODUCTION_SOURCE_KEYS),
+    maxOutputTokens: 3000, writeTargets: [],
+    lastVerifiedAt: '2026-11-03',
+    regressionTests: ['R-READER-P4-generation-v3'],
+  },
+  {
+    version: 1,
+    id: 'reader.prose.revise',
+    agentId: 'prose', defaultForAgent: false,
+    label: 'Reader reader.prose.revise', owner: 'reader-production',
+    promptVersion: 'reader-semantic-revision-vi-v1', executionMode: 'revise',
+    contextTaskKind: 'agent-prose', readToolNames: [],
+    contextSourceKeys: READER_PRODUCTION_SOURCE_KEYS,
+    optionalContextSourceKeys: [],
+    inputPolicy: READER_PRODUCTION_INPUT_POLICY,
+    contextCompression: compressionPolicy(READER_PRODUCTION_SOURCE_KEYS),
+    maxOutputTokens: 16000, writeTargets: [],
+    lastVerifiedAt: '2026-11-03',
+    regressionTests: ['R-READER-P4-generation-v3'],
+  },
+  {
+    version: 1,
+    id: 'reader.choices.generate',
+    agentId: 'prose', defaultForAgent: false,
+    label: 'Reader reader.choices.generate', owner: 'reader-production',
+    promptVersion: 'reader-choices-generate-vi-v1', executionMode: 'generate',
+    contextTaskKind: 'agent-prose', readToolNames: [],
+    contextSourceKeys: READER_PRODUCTION_SOURCE_KEYS,
+    optionalContextSourceKeys: [],
+    inputPolicy: READER_PRODUCTION_INPUT_POLICY,
+    contextCompression: compressionPolicy(READER_PRODUCTION_SOURCE_KEYS),
+    maxOutputTokens: 1200, writeTargets: [],
+    lastVerifiedAt: '2026-11-03',
+    regressionTests: ['R-READER-P4-generation-v3'],
+  },
+  {
+    version: 1,
+    id: 'reader.choices.review',
+    agentId: 'prose', defaultForAgent: false,
+    label: 'Reader reader.choices.review', owner: 'reader-production',
+    promptVersion: 'reader-choices-review-vi-v1', executionMode: 'review',
+    contextTaskKind: 'agent-prose', readToolNames: [],
+    contextSourceKeys: READER_PRODUCTION_SOURCE_KEYS,
+    optionalContextSourceKeys: [],
+    inputPolicy: READER_PRODUCTION_INPUT_POLICY,
+    contextCompression: compressionPolicy(READER_PRODUCTION_SOURCE_KEYS),
+    maxOutputTokens: 1200, writeTargets: [],
+    lastVerifiedAt: '2026-11-03',
+    regressionTests: ['R-READER-P4-generation-v3'],
+  },
+
 {
     version: 1,
     id: 'world-origin.narrative-annotation-extract',

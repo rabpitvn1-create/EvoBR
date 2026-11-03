@@ -11,7 +11,7 @@
       "allowedCallers": [
         "src/lib/longform-voice/session.ts"
       ],
-      "reason": "\u6d4f\u89c8\u5668\u6216\u72ec\u7acb\u8bed\u97f3\u670d\u52a1\u4ec5\u5c06\u663e\u5f0f\u5f55\u97f3\u8f6c\u6210\u53ef\u7f16\u8f91\u8f93\u5165\uff0c\u4e0d\u81ea\u52a8\u53d1\u9001\u3001\u6267\u884c\u6216\u91c7\u7eb3\u3002"
+      "reason": "浏览器或独立语音服务仅将显式录音转成可编辑输入，不自动发送、执行或采纳。"
     },
     {
       "entryId": "longform.voice.output",
@@ -20,7 +20,7 @@
       "allowedCallers": [
         "src/lib/longform-voice/session.ts"
       ],
-      "reason": "\u4ec5\u6717\u8bfb\u4f5c\u8005\u9009\u62e9\u7684\u53ef\u89c1\u6587\u672c\uff1b\u4e0d\u8bfb\u53d6\u6570\u636e\u5e93\u3001\u68c0\u7d22\u4e0a\u4e0b\u6587\u6216\u5199\u4f5c\u54c1\uff0c\u97f3\u9891\u64ad\u653e\u540e\u91ca\u653e\u3002"
+      "reason": "仅朗读作者选择的可见文本；不读取数据库、检索上下文或写作品，音频播放后释放。"
     }
   ],
   "entries": [
@@ -41,7 +41,7 @@
       "allowedCallers": [
         "src/lib/generation/chapter-generation-node.ts"
       ],
-      "reason": "\u6b63\u6587\u5148\u5f62\u6210 durable \u7ae0\u8282\u5019\u9009\uff0c\u4f5c\u8005\u786e\u8ba4\u540e\u5199\u5165 chapters\u3002"
+      "reason": "正文先形成 durable 章节候选，作者确认后写入 chapters。"
     },
     {
       "entryId": "prose.chapter.continue",
@@ -60,7 +60,7 @@
       "allowedCallers": [
         "src/lib/generation/chapter-generation-node.ts"
       ],
-      "reason": "\u7eed\u5199\u5148\u5f62\u6210 durable \u5019\u9009\uff0c\u4f5c\u8005\u786e\u8ba4\u540e\u5408\u5165\u7ae0\u8282\u3002"
+      "reason": "续写先形成 durable 候选，作者确认后合入章节。"
     },
     {
       "entryId": "prose.selection.polish",
@@ -76,7 +76,7 @@
       "allowedCallers": [
         "src/components/editor/ChapterEditor.tsx"
       ],
-      "reason": "\u6a21\u578b\u8f93\u51fa\u53ea\u8fdb\u5165\u5bf9\u7167\u9884\u89c8\uff1b\u4f5c\u8005\u5e94\u7528\u540e\u6309\u666e\u901a\u7f16\u8f91\u4fdd\u5b58\u3002"
+      "reason": "模型输出只进入对照预览；作者应用后按普通编辑保存。"
     },
     {
       "entryId": "prose.selection.expand",
@@ -92,7 +92,7 @@
       "allowedCallers": [
         "src/components/editor/ChapterEditor.tsx"
       ],
-      "reason": "\u6269\u5199\u53ea\u5f62\u6210\u5185\u5b58\u9884\u89c8\uff0c\u4e0d\u5728\u6a21\u578b\u8c03\u7528\u9636\u6bb5\u5199 Canon\u3002"
+      "reason": "扩写只形成内存预览，不在模型调用阶段写 Canon。"
     },
     {
       "entryId": "prose.selection.deai",
@@ -108,7 +108,7 @@
       "allowedCallers": [
         "src/components/editor/ChapterEditor.tsx"
       ],
-      "reason": "\u53bb AI \u5473\u7ed3\u679c\u5148\u9884\u89c8\uff0c\u8c03\u7528\u672c\u8eab\u4e0d\u5f97\u5199\u6b63\u5f0f\u6b63\u6587\u3002"
+      "reason": "去 AI 味结果先预览，调用本身不得写正式正文。"
     },
     {
       "entryId": "prose.chapter.memory",
@@ -128,7 +128,7 @@
         "src/components/editor/ChapterEditor.tsx",
         "src/lib/prose/post-adoption-runner.ts"
       ],
-      "reason": "\u7ae0\u8282\u6458\u8981\u548c\u4ea4\u63a5\u5148\u7ecf\u7ed3\u6784\u5316\u5019\u9009\u4e0e stale \u68c0\u67e5\uff0c\u518d\u539f\u5b50\u5199\u56de\u3002"
+      "reason": "章节摘要和交接先经结构化候选与 stale 检查，再原子写回。"
     },
     {
       "entryId": "prose.chapter.organize",
@@ -156,7 +156,7 @@
         "src/components/editor/ChapterEditor.tsx",
         "src/lib/prose/post-adoption-runner.ts"
       ],
-      "reason": "\u4e03\u57df\u6574\u7406\u7684\u5b9e\u9645\u5199\u96c6\u5408\u7531 Skill \u6d3e\u751f\u5e76\u9010\u57df\u786e\u8ba4\u3002"
+      "reason": "七域整理的实际写集合由 Skill 派生并逐域确认。"
     },
     {
       "entryId": "prose.review.quality",
@@ -172,7 +172,7 @@
       "allowedCallers": [
         "src/lib/prose/quality-transport.ts"
       ],
-      "reason": "\u5168\u7ae0\u9605\u8bfb\u5efa\u8bae\u6301\u4e45\u4fdd\u5b58\u5b9e\u9645\u8bf7\u6c42\u3001\u8986\u76d6\u4e0e\u5f15\u6587\u8bc1\u636e\uff0c\u4fdd\u6301\u53ea\u8bfb\uff0c\u4e0d\u63d0\u4f9b\u8d28\u91cf\u5206\u6216 AI \u6982\u7387\u3002"
+      "reason": "全章阅读建议持久保存实际请求、覆盖与引文证据，保持只读，不提供质量分或 AI 概率。"
     },
     {
       "entryId": "prose.review.anti-ai",
@@ -188,7 +188,7 @@
       "allowedCallers": [
         "src/lib/prose/quality-transport.ts"
       ],
-      "reason": "\u5168\u7ae0\u9605\u8bfb\u5efa\u8bae\u6301\u4e45\u4fdd\u5b58\u5b9e\u9645\u8bf7\u6c42\u3001\u8986\u76d6\u4e0e\u5f15\u6587\u8bc1\u636e\uff0c\u4fdd\u6301\u53ea\u8bfb\uff0c\u4e0d\u63d0\u4f9b\u8d28\u91cf\u5206\u6216 AI \u6982\u7387\u3002"
+      "reason": "全章阅读建议持久保存实际请求、覆盖与引文证据，保持只读，不提供质量分或 AI 概率。"
     },
     {
       "entryId": "prose.review.readability",
@@ -204,7 +204,7 @@
       "allowedCallers": [
         "src/lib/prose/quality-transport.ts"
       ],
-      "reason": "\u5168\u7ae0\u9605\u8bfb\u5efa\u8bae\u6301\u4e45\u4fdd\u5b58\u5b9e\u9645\u8bf7\u6c42\u3001\u8986\u76d6\u4e0e\u5f15\u6587\u8bc1\u636e\uff0c\u4fdd\u6301\u53ea\u8bfb\uff0c\u4e0d\u63d0\u4f9b\u8d28\u91cf\u5206\u6216 AI \u6982\u7387\u3002"
+      "reason": "全章阅读建议持久保存实际请求、覆盖与引文证据，保持只读，不提供质量分或 AI 概率。"
     },
     {
       "entryId": "prose.chapter.quality-revise",
@@ -223,7 +223,7 @@
       "allowedCallers": [
         "src/lib/prose/quality-transport.ts"
       ],
-      "reason": "\u4f5c\u8005\u9009\u62e9\u95ee\u9898\u5e76\u51bb\u7ed3\u5141\u8bb8\u8303\u56f4\uff0c\u4e00\u6b21\u4fee\u8ba2\u548c\u4e00\u6b21\u590d\u6838\u540e\u4ecd\u7ecf\u540c\u4e00\u6b63\u6587\u5019\u9009\u91c7\u7eb3\u3002"
+      "reason": "作者选择问题并冻结允许范围，一次修订和一次复核后仍经同一正文候选采纳。"
     },
     {
       "entryId": "prose.review.recheck",
@@ -239,7 +239,7 @@
       "allowedCallers": [
         "src/lib/prose/quality-transport.ts"
       ],
-      "reason": "\u53ea\u8bfb\u590d\u6838\u9009\u4e2d\u95ee\u9898\u53ca\u65b0\u95ee\u9898\uff0c\u4e0d\u4ea7\u751f\u7b2c\u4e8c\u8f6e\u91cd\u5199\u3002"
+      "reason": "只读复核选中问题及新问题，不产生第二轮重写。"
     },
     {
       "entryId": "prose.review.consistency",
@@ -256,7 +256,7 @@
       "allowedCallers": [
         "src/components/editor/ReviewPanel.tsx"
       ],
-      "reason": "\u4e00\u81f4\u6027\u5ba1\u8ba1\u6709 durable \u8bc1\u636e\u4f46\u4fdd\u6301\u53ea\u8bfb\u3002"
+      "reason": "一致性审计有 durable 证据但保持只读。"
     },
     {
       "entryId": "world.map.concept",
@@ -272,7 +272,7 @@
       "allowedCallers": [
         "src/components/geography/GeographyPanel.tsx"
       ],
-      "reason": "\u6982\u5ff5\u5730\u56fe\u4ec5\u8fdb\u5165\u5f53\u524d UI SVG\u3002"
+      "reason": "概念地图仅进入当前 UI SVG。"
     },
     {
       "entryId": "outline.workshop.scan",
@@ -288,7 +288,7 @@
       "allowedCallers": [
         "src/lib/outline/workshop.ts"
       ],
-      "reason": "\u5de5\u574a\u626b\u63cf\u662f\u6700\u7ec8\u7ae0\u7eb2\u5019\u9009\u7684\u4e2d\u95f4\u4ea7\u7269\u3002"
+      "reason": "工坊扫描是最终章纲候选的中间产物。"
     },
     {
       "entryId": "outline.workshop.motivation",
@@ -304,7 +304,7 @@
       "allowedCallers": [
         "src/lib/outline/workshop.ts"
       ],
-      "reason": "\u52a8\u673a\u5206\u6790\u662f\u4e2d\u95f4\u5019\u9009\uff0c\u4e0d\u76f4\u63a5\u5199\u8868\u3002"
+      "reason": "动机分析是中间候选，不直接写表。"
     },
     {
       "entryId": "outline.workshop.collision",
@@ -320,7 +320,7 @@
       "allowedCallers": [
         "src/lib/outline/workshop.ts"
       ],
-      "reason": "\u51b2\u7a81\u5206\u6790\u662f\u4e2d\u95f4\u5019\u9009\uff0c\u4e0d\u76f4\u63a5\u5199\u8868\u3002"
+      "reason": "冲突分析是中间候选，不直接写表。"
     },
     {
       "entryId": "outline.workshop.quality",
@@ -336,7 +336,7 @@
       "allowedCallers": [
         "src/lib/outline/workshop.ts"
       ],
-      "reason": "\u5de5\u574a\u8d28\u91cf\u95e8\u53ea\u8f93\u51fa\u62a5\u544a\u3002"
+      "reason": "工坊质量门只输出报告。"
     },
     {
       "entryId": "outline.workshop.scenes",
@@ -355,7 +355,7 @@
       "allowedCallers": [
         "src/lib/outline/workshop.ts"
       ],
-      "reason": "\u6700\u7ec8\u573a\u666f\u7ae0\u7eb2\u5019\u9009\u53ef\u7531\u4f5c\u8005\u786e\u8ba4\u5199\u5165 outlineNodes\u3002"
+      "reason": "最终场景章纲候选可由作者确认写入 outlineNodes。"
     },
     {
       "entryId": "outline.volume.generate",
@@ -374,7 +374,7 @@
       "allowedCallers": [
         "src/lib/outline/generation-node.ts"
       ],
-      "reason": "\u5377\u7eb2\u901a\u8fc7 durable \u6279\u6b21\u5019\u9009\u4e0e\u786e\u8ba4\u91c7\u7eb3\u3002"
+      "reason": "卷纲通过 durable 批次候选与确认采纳。"
     },
     {
       "entryId": "outline.chapter.generate",
@@ -394,7 +394,7 @@
         "src/lib/outline/generation-node.ts",
         "src/lib/outline/chunked-session.ts"
       ],
-      "reason": "\u7ae0\u7eb2\u901a\u8fc7 durable \u6279\u6b21\u5019\u9009\u4e0e\u786e\u8ba4\u91c7\u7eb3\u3002"
+      "reason": "章纲通过 durable 批次候选与确认采纳。"
     },
     {
       "entryId": "outline.chapter.review",
@@ -410,7 +410,7 @@
       "allowedCallers": [
         "src/lib/outline/chapter-reviewer.ts"
       ],
-      "reason": "\u7ae0\u7eb2\u8bca\u65ad\u53ea\u8fd4\u56de\u95ee\u9898\u4e0e\u5efa\u8bae\uff0c\u4e0d\u76f4\u63a5\u5199\u5165\u5927\u7eb2\u3002"
+      "reason": "章纲诊断只返回问题与建议，不直接写入大纲。"
     },
     {
       "entryId": "outline.chapter.rewrite",
@@ -429,7 +429,7 @@
       "allowedCallers": [
         "src/lib/outline/chapter-reviewer.ts"
       ],
-      "reason": "\u7ae0\u7eb2\u6700\u5c0f\u6539\u5199\u5148\u505c\u7559\u4e3a\u4f5c\u8005\u8349\u7a3f\u5019\u9009\uff0c\u786e\u8ba4\u540e\u624d\u53ef\u5199\u5165 outlineNodes\u3002"
+      "reason": "章纲最小改写先停留为作者草稿候选，确认后才可写入 outlineNodes。"
     },
     {
       "entryId": "outline.chunked.generate",
@@ -449,7 +449,7 @@
       "allowedCallers": [
         "src/lib/outline/chunked-generator.ts"
       ],
-      "reason": "\u5206\u5757\u7ae0\u7eb2\u4e0e\u5267\u60c5\u65b9\u5411\u5747\u5148\u751f\u6210\u53ef\u5ba1\u9605\u8349\u7a3f\uff0c\u4f5c\u8005\u9009\u62e9\u5e76\u786e\u8ba4\u540e\u624d\u5199\u5165\u5927\u7eb2\u3002"
+      "reason": "分块章纲与剧情方向均先生成可审阅草稿，作者选择并确认后才写入大纲。"
     },
     {
       "entryId": "outline.detail.scene",
@@ -468,7 +468,7 @@
       "allowedCallers": [
         "src/components/outline/useDetailedOutlineGenerationController.ts"
       ],
-      "reason": "\u5355\u7ae0\u573a\u666f\u7ec6\u7eb2\u8fdb\u5165 durable \u5019\u9009\u5e76\u663e\u5f0f\u91c7\u7eb3\u3002"
+      "reason": "单章场景细纲进入 durable 候选并显式采纳。"
     },
     {
       "entryId": "outline.detail.enhance",
@@ -488,7 +488,7 @@
         "src/components/outline/useDetailedOutlineGenerationController.ts",
         "src/lib/agent/detailed-outline-authoring.ts"
       ],
-      "reason": "\u7ec6\u7eb2\u589e\u5f3a\u8fdb\u5165\u540c\u4e00 durable \u5019\u9009\u4e0e\u91c7\u7eb3\u8fb9\u754c\u3002"
+      "reason": "细纲增强进入同一 durable 候选与采纳边界。"
     },
     {
       "entryId": "outline.detail.batch",
@@ -507,7 +507,7 @@
       "allowedCallers": [
         "src/lib/ai/batch-detail-runner.ts"
       ],
-      "reason": "\u6279\u91cf\u7ec6\u7eb2\u9010\u7ae0\u590d\u7528\u540c\u4e00 required Gateway\u3001durable \u5019\u9009\u4e0e\u4f5c\u8005\u786e\u8ba4\u91c7\u7eb3\u8fb9\u754c\u3002"
+      "reason": "批量细纲逐章复用同一 required Gateway、durable 候选与作者确认采纳边界。"
     },
     {
       "entryId": "world.scene.verify",
@@ -523,7 +523,7 @@
       "allowedCallers": [
         "src/components/scene/SceneVerifyPanel.tsx"
       ],
-      "reason": "\u573a\u666f\u8003\u8bc1\u53ea\u5c55\u793a\u5efa\u8bae\u3002"
+      "reason": "场景考证只展示建议。"
     },
     {
       "entryId": "prompt.examples.generate",
@@ -539,7 +539,7 @@
       "allowedCallers": [
         "src/components/settings/prompt/PromptExamplesEditor.tsx"
       ],
-      "reason": "\u793a\u4f8b\u53ea\u8fdb\u5165\u672a\u4fdd\u5b58\u6a21\u677f\u8349\u7a3f\u3002"
+      "reason": "示例只进入未保存模板草稿。"
     },
     {
       "entryId": "prompt.workflow.step",
@@ -555,7 +555,7 @@
       "allowedCallers": [
         "src/lib/generation/workflow-generation-node.ts"
       ],
-      "reason": "\u81ea\u7531 PromptWorkflow \u7684\u52a8\u6001 category \u88ab\u9650\u5236\u5728\u5b9e\u9a8c\u6027\u5185\u5b58\u8349\u7a3f\uff1b\u4fdd\u5b58\u662f\u72ec\u7acb\u4f5c\u8005\u52a8\u4f5c\u3002"
+      "reason": "自由 PromptWorkflow 的动态 category 被限制在实验性内存草稿；保存是独立作者动作。"
     },
     {
       "entryId": "style.calibration.preview",
@@ -571,7 +571,92 @@
       "allowedCallers": [
         "src/components/style/StyleCalibrationPanel.tsx"
       ],
-      "reason": "\u6821\u51c6\u7a3f\u7559\u5728\u7ec4\u4ef6\u5185\u5b58\uff0c\u53cd\u9988\u4e0e\u6837\u672c\u4fdd\u5b58\u662f\u72ec\u7acb\u4f5c\u8005\u52a8\u4f5c\u3002"
+      "reason": "校准稿留在组件内存，反馈与样本保存是独立作者动作。"
+    },
+    {
+      "entryId": "reader.prose.generate",
+      "skillId": "reader.prose.generate",
+      "categories": [
+        "reader.prose.generate"
+      ],
+      "runContractBuilderId": "reader-generation-durable-v1",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "reader-prose-candidate",
+      "adoptAllowed": false,
+      "adoptionTargets": [],
+      "allowedCallers": [
+        "src/lib/reader/model.ts"
+      ],
+      "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
+    },
+    {
+      "entryId": "reader.prose.review",
+      "skillId": "reader.prose.review",
+      "categories": [
+        "reader.prose.review"
+      ],
+      "runContractBuilderId": "reader-generation-durable-v1",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "reader-prose-semantic-verdict",
+      "adoptAllowed": false,
+      "adoptionTargets": [],
+      "allowedCallers": [
+        "src/lib/reader/model.ts"
+      ],
+      "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
+    },
+    {
+      "entryId": "reader.prose.revise",
+      "skillId": "reader.prose.revise",
+      "categories": [
+        "reader.prose.revise"
+      ],
+      "runContractBuilderId": "reader-generation-durable-v1",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "reader-prose-revision",
+      "adoptAllowed": false,
+      "adoptionTargets": [],
+      "allowedCallers": [
+        "src/lib/reader/model.ts"
+      ],
+      "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
+    },
+    {
+      "entryId": "reader.choices.generate",
+      "skillId": "reader.choices.generate",
+      "categories": [
+        "reader.choices.generate"
+      ],
+      "runContractBuilderId": "reader-generation-durable-v1",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "reader-choice-candidate",
+      "adoptAllowed": false,
+      "adoptionTargets": [],
+      "allowedCallers": [
+        "src/lib/reader/model.ts"
+      ],
+      "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
+    },
+    {
+      "entryId": "reader.choices.review",
+      "skillId": "reader.choices.review",
+      "categories": [
+        "reader.choices.review"
+      ],
+      "runContractBuilderId": "reader-generation-durable-v1",
+      "executionBoundary": "durable-run",
+      "entryKind": "formal",
+      "candidateKind": "reader-choice-verdict",
+      "adoptAllowed": false,
+      "adoptionTargets": [],
+      "allowedCallers": [
+        "src/lib/reader/model.ts"
+      ],
+      "reason": "P4 Reader model stage, frozen session Gateway and Skill binding only; no reader-table adoption or chapter writes."
     }
   ]
 }
