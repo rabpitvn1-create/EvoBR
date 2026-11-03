@@ -3,6 +3,7 @@ import { db } from '../db/schema'
 import { adopt,hashAdoptRecordFieldsV1 } from '../registry/adopt'
 import { scopeTransactionTables } from '../workspace/scope'
 import { sha256Text } from '../ai/chapter-memory/text-normalization'
+import { serializeReaderSceneHintsV1 } from './stage-assets'
 import type { WorkspaceScope } from '../types'
 import type { ReaderGenerationCandidateV1 } from './generation'
 import type { ReaderTurnIntentV1,ReaderPublicationReceiptV1 } from './publication'
@@ -25,6 +26,7 @@ export interface ReaderPreparedCommitV1 {
   candidate:ReaderGenerationCandidateV1
   contentHash:string
   sessionCasHash:string
+  sceneHintsJson:string|null
 }
 function fail(message:string):never{return rejectReaderPublicationV1(message)}
 async function writeOne(input:{
@@ -50,7 +52,7 @@ async function writeOne(input:{
 }
 export const READER_SESSION_CAS_FIELDS_V1=['headTurnId','revision'] as const
 export async function prepareReaderCommitV1(input:Omit<ReaderPreparedCommitV1,
-  'contentHash'|'sessionCasHash'>):Promise<ReaderPreparedCommitV1>{
+  'contentHash'|'sessionCasHash'|'sceneHintsJson'>):Promise<ReaderPreparedCommitV1>{
   const session=await db.readerSessions.get(input.intent.sessionId)
   if(!session||session.projectId!==input.scope.projectId||
     session.workId!==input.scope.workId||
@@ -62,7 +64,8 @@ export async function prepareReaderCommitV1(input:Omit<ReaderPreparedCommitV1,
     sha256Text(input.candidate.finalProse),
     hashAdoptRecordFieldsV1({...session},READER_SESSION_CAS_FIELDS_V1),
   ])
-  return {...input,contentHash,sessionCasHash}
+  return {...input,contentHash,sessionCasHash,
+    sceneHintsJson:serializeReaderSceneHintsV1(input.candidate.sceneHints)}
 }
 export async function commitReaderPublicationV1(
   prepared:ReaderPreparedCommitV1,hooks?:ReaderCommitTestHooksV1,
@@ -101,7 +104,8 @@ export async function commitReaderPublicationV1(
     const turnId=await writeOne({scope,target:'readerTurns',hooks,data:{
       sessionId:intent.sessionId,parentTurnId:prepared.expectedHeadTurnId,
       turnOrdinal:prepared.turnOrdinal,content:candidate.finalProse,
-      contentHash:prepared.contentHash,status:'published',
+      contentHash:prepared.contentHash,sceneHintsJson:prepared.sceneHintsJson,
+      status:'published',
     }})
     const choiceRows:ReaderPublicationReceiptV1['choices']=[]
     for(const [index,choice] of candidate.choices.choices.entries()){
