@@ -6,6 +6,7 @@
  */
 
 import { db } from '../db/schema'
+import { READER_SOURCE_KEYS_V1, readReaderFrozenSourceV1 } from '../reader/gateway-sources'
 
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
 import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outline-walk'
@@ -794,6 +795,19 @@ async function readCharacterPassages(projectId: number, name?: string, worldGrou
 }
 
 export const CONTEXT_SOURCES: ContextSource[] = [
+  // P3 reader sources: only the already-authorized session snapshot can supply
+  // these values. Direct Work/Chapter reads are never used by any reader key.
+  ...READER_SOURCE_KEYS_V1.map((key): ContextSource => ({
+    key,
+    label: key,
+    scope: 'manual',
+    layer: 'L0',
+    budgetTokens: 1_000_000,
+    protectedFromTrim: true,
+    atomic: true,
+    read: input => readReaderFrozenSourceV1(input, key),
+  })),
+
 {
     // ARCH-05: immutable WorldReference resource provider. Ordinary
     // assembleContext readers never activate it implicitly; upper-product
