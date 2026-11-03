@@ -87,11 +87,11 @@ Required fields include `id` after insertion, `projectId`, `createdAt`; `updated
 | Import missing required parent ref | Transaction rollback |
 | Refresh/restart after publication | Same head, choices, decision and receipt |
 
-## 6. Remaining decisions for P0.2 and P0.4 (not implicit implementation)
+## 6. Decisions settled in P0.2 and remaining P0.4 obligations
 
 - Exact coordinate and encoding of immutable Canon baseline: existing World release vs dedicated reader snapshot (prove reconstructability).
 - Whether the existing importer safely resolves BOTH `headTurnId` and `forkTurnId` deferred pointers, and whether custom selfTree topological ordering can cover a nested session fork.
-- Contract of virtual continuation choice (sentinel choice record vs explicit action kind) and optional opening publication; P0.2 must settle it before P5.
+- **Settled by P0.2:** the opening turn is an explicit `kind:'opening'` intent with no decision; `Đọc tiếp` is a real, persisted `kind:'continue'` choice with a numeric ID, never a sentinel. Continue is injected when validated branch choices are empty. Do not reopen these decisions in P0.5.
 - Fact/knowledge confirmation and supersession algorithm, readiness threshold for continuation; P0.4 must settle it before P3.
 - Which fields are truly AI writable versus trusted coordinator-owned; do not indiscriminately register all receipt/status fields as model-writable.
 
