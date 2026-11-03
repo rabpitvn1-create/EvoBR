@@ -199,7 +199,7 @@ export async function runReaderChoiceStageV1(input:{
       responseHashes.push(responseHash)
       await finishReaderModelStepV1({handle,stepId:READER_STEPS_V1.choices,
         attempt,startedAt:started.startedAt,output:response.text,complete:false,
-        ...response.usage})
+        ...response.usage,requestLifecycle:response.requestLifecycle})
       const parsed=parseReaderBranchChoicesV1(response.text,finalProse)
       if(!parsed.choices.length)throw Error('no grounded model choices')
       branches=parsed.choices
@@ -229,7 +229,7 @@ export async function runReaderChoiceStageV1(input:{
       await finishReaderModelStepV1({
         handle,stepId:READER_STEPS_V1.choiceCheck,attempt:started.attempt,
         startedAt:started.startedAt,output:response.text,complete:false,
-        ...response.usage,
+        ...response.usage,requestLifecycle:response.requestLifecycle,
       })
       issues=parseReaderChoiceReviewV1(response.text,handle,finalProse,branches)
       await completeReaderModelStepV1(handle,READER_STEPS_V1.choiceCheck,
