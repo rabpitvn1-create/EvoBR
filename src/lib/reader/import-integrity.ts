@@ -4,6 +4,7 @@
  * governs effective lineage/Context Gateway selection at read time.
  */
 import { db } from '../db/schema'
+import { verifyReaderCanonBaselineV1 } from './baseline'
 
 function fail(reason: string): never { throw Error('[readerImport] ' + reason) }
 
@@ -21,6 +22,7 @@ export async function assertImportedReaderGraphV1(projectId: number): Promise<vo
   const byTurn = new Map(turns.map(t => [t.id!, t] as const))
   const byChoice = new Map(choices.map(c => [c.id!, c] as const))
   for (const session of sessions) {
+    await verifyReaderCanonBaselineV1(session)
     const parent = session.parentSessionId == null ? null : bySession.get(session.parentSessionId)
     if (session.parentSessionId != null &&
       (!parent || parent.workId !== session.workId || parent.projectId !== projectId)) {
