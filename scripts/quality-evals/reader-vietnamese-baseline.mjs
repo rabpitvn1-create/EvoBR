@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { chromium } from '@playwright/test'
-import { getVoiceProfileV1 } from './reader-voice-profiles.mjs'
+import { getVoiceProfileV1, BASELINE_SYSTEM_PROMPT_V1, buildVoiceSystemPromptV1 } from './reader-voice-profiles.mjs'
 
 const TOTAL_TURNS = 20
 const SCENARIO_ID = 'evobr-p1-cao-minh-level0-v1'
@@ -57,16 +57,6 @@ const SCENARIO = Object.freeze({
     'Không kết thúc truyện cưỡng ép. Không viết lại các lượt trước.',
   ],
 })
-const SYSTEM_PROMPT = [
-  'Bạn là người viết tiểu thuyết kinh dị tâm lý bằng tiếng Việt tự nhiên.',
-  'Viết một đoạn văn xuôi hoàn chỉnh, có diễn tiến nhân quả và điểm neo cảm xúc.',
-  'Chỉ xuất văn xuôi, không tiêu đề, không Markdown, không phân tích hay lựa chọn.',
-  'Giữ nguyên dữ kiện của tất cả những lượt truyện trước.',
-  'Không thêm nhân vật có tên hoặc lore được xem là Canon khi chưa có dữ kiện.',
-  'Tránh lặp công thức văn, tránh kể lại nguyên văn đoạn vừa rồi.',
-  'Mỗi lượt khoảng 180–300 từ nếu khả thi; ưu tiên tính tự nhiên và continuity.',
-].join('\n')
-
 function instructions(turn, previous) {
   const history = previous.map((item, index) => {
     return 'LƯỢT ' + (index + 1) + ' (SHA256 ' + item.hash + '):\n' + item.text
@@ -253,7 +243,7 @@ async function main() {
   const config = validateEnvironment()
   const voiceProfileId = process.env.EVO_P1_VOICE_PROFILE || null
   const voiceProfile = voiceProfileId ? getVoiceProfileV1(voiceProfileId) : null
-  const activeSystemPrompt = voiceProfile ? SYSTEM_PROMPT + '\n\nCHỈ ĐẠO GIỌNG VĂN (không sửa Canon):\n' + voiceProfile.instruction : SYSTEM_PROMPT
+  const activeSystemPrompt = voiceProfile ? buildVoiceSystemPromptV1(voiceProfileId) : BASELINE_SYSTEM_PROMPT_V1
   const voiceProfileHash = voiceProfile ? sha256(JSON.stringify({ id: voiceProfileId, ...voiceProfile })) : null
   const directory = resolve(process.argv[2] || 'p1-results')
   const runId = randomUUID()
