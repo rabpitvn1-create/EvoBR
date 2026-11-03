@@ -1,31 +1,37 @@
-# P6 Reader static stage assets
+# U1.1 Reader artwork: verified measurements and release contract
 
-P6 is a **presentation layer only**. The stage never selects a level, adds an entity to Canon, changes a session, or submits gameplay actions. It is completely static. UI output is only the committed Reader history. No assets are copied from StoryForge or another repository.
+The UI is a presentation layer only; it never changes the confirmed Canon or the reader publication transaction. **Muse owns a separate commit delivering the 16 measured WebP files.** This UI PR does not create, duplicate or embed art.
 
-## Asset slots
+## Approved mobile asset slots
 
-The default manifest is `src/lib/reader/stage-assets.ts` (`READER_STAGE_ASSETS_V1`). The public web-root paths below are placeholders for **files to be supplied later**, not art included in this PR:
+| Class | Name/IDs | Expected paths | Measured bytes |
+| --- | --- | --- | ---: |
+| LEVEL 0–6 | `level-0` through `level-6` | `public/reader-assets/levels/level-N.webp` | 156,170 total |
+| Cao Minh | `cao-minh` | `public/reader-assets/characters/cao-minh.webp` | 138,348 |
+| Entities (eight) | `smiler`, `clump`, `deathmoth`, `skin-stealer`, `wretch`, `duller`, `slenderman`, `hostile-faceling` | `public/reader-assets/entities/ID.webp` | 116,350 total |
+| **Total** | **16 images** | **Asset files supplied by Muse separately** | **410,868** |
 
-| Key | Public path | Required for stage |
-| --- | --- | --- |
-| `levels['level-0']` | `public/reader-assets/levels/level-0.webp` | yes |
-| `protagonist` (Cao Minh) | `public/reader-assets/characters/cao-minh.webp` | yes |
-| `entities['brownie']` | `public/reader-assets/entities/brownie.webp` | optional |
+LEVEL file sizes as measured by Muse: 0: 22,284; 1: 24,334; 2: 20,752; 3: 22,872; 4: 9,024; 5: 53,636; 6: 3,268 bytes. Sources are landscape, exported 760×440 WebP. Default focus is 50%/50% for all seven, encoded as `levelFocus` by ID so cropping can later be adjusted independently.
 
-Add owned artwork to these paths without changing rendering code. For more LEVEL IDs or entities, add explicit keys in `READER_STAGE_ASSETS_V1`. Transparent portrait art with a lower ground shadow is recommended for overlays; no image binary or fictional placeholder is committed by P6.
+Cao Minh uses a 438×780 WebP cut from a verified 1024×1536 RGBA Codex; alpha bbox was 850×1512, safely above the source 2× threshold. Image is 172×260 CSS px at the 412px viewport, right anchored, extending 40px above the stage. The character overlay is optional if loading unexpectedly fails, with no fabricated replacement.
 
-The **only** supported P6 display hint is a JSON object persisted as `readerTurns.sceneHintsJson`, for example:
+All eight entity WebPs have original RGBA alpha. Display a **single priority-ranked entity** in a 110×110 contain box at bottom-left, extending 12px below the stage. Deathmoth is a wide alpha bbox and must stay `object-fit:contain`. Hound is excluded due to its 128×128 source; `hotel_corpse_lure` / `the_beast_of_level_5` duplicate one image, and `diep_minh` is a character, not an entity; none is admitted into the U1.1 manifest.
 
-```json
-{"levelId":"level-0","entityIds":["brownie"]}
-```
+Canon alias `brownie → brownies` is confirmed by Muse (`ENTITY.BROWNIES` is the only entity). A canonical `brownies` **ID exists but has no approved image** in this tranche; its manifest value is an empty slot, so it is never shown. No art is copied from another repo or fabricated.
 
-The renderer accepts only registered level/entity keys. It does not permit free-form URLs, arbitrary strings, or model-supplied asset paths. The level and entity list must be verified by the upstream reader evidence boundary; the stage never authorizes them. Missing or malformed hints, unknown level, absent background or protagonist image hide the entire stage and leave prose visible. An absent entity image hides only that entity. If `entityIds` is absent/empty, no entity appears.
+## Rendering rules and fallbacks
 
-The background is contained by a rounded `overflow:hidden` viewport; Cao Minh and entity overlays are in a sibling `overflow:visible` layer. No animation, controls, or CSS transitions are used. Tests intercept these declared asset URLs with synthetic SVG response fixtures, not production game art.
+The active turn's *verified, committed* `readerTurns.sceneHintsJson` is used solely for illustrative decoration. The only permissible model payload has `levelId` and `entityIds`; a model-supplied URL or unlisted ID never resolves to an image. The choices-stage prompt must emit a `sceneHints` key: non-null only when the V3-approved final prose clearly identifies an allowlisted LEVEL, with allowlisted entity IDs only if present in that final prose. Otherwise `null`. Incorrect/malformed hints always normalize to `null` without blocking publication. Hints are not Canon facts.
 
-## P4/P5 boundary
+Unknown LEVEL or null hint: **no stage box**. If a valid hint qualifies before initial render, the stage reserves exactly 380×220 CSS px at a 412px viewport. Background is rounded 20px and clipped; actors overflow their own layer, not the page. If an image fails after rendering, its image disappears but the reserved stage box **never collapses during that reading visit**, preventing layout shift. Prose of historical turns remains plain text; only the current head has the static illustration, immediately preceding its prose.
 
-P4 collects optional `sceneHints` from its choices response **after V3** and binds an allowlisted, normalized value into the signed choices receipt and verified candidate. P5 prepares a deterministic `sceneHintsJson` string **before** opening the single Dexie publication transaction, then adopts it with the turn. Missing, malformed, unknown-level, or ill-typed hints become `null`; they never prevent publishing valid prose or choices. A hint remains non-authoritative presentation data, not evidence that a LEVEL/entity actually exists in Canon. The stage never infers a LEVEL from prose and never accepts a model-supplied image path. Real art is still absent until the declared slots are populated.
+No animation, transition, combat, inventory, level-up or interactivity is introduced.
 
-The Reader UI is entered from the Long Form library and stays scoped to the chosen Work. Generation uses the same persisted AI configuration and P5 publication coordinator. Browser refresh looks up any recorded pending request's receipt before offering another action and does not automatically reissue unknown model requests.
+## Acceptance and evidence
+
+* 412×915 viewport; `document.documentElement.scrollWidth <= 412`, 0px layout shift measured at the first paragraph's `offsetTop` before and after delayed asset load, touch targets >=44px, 0 animation.
+* Capture seven screenshots (LEVEL 0–6) with **Muse's real WebPs** and the Cao Minh overlay; confirm level-identifying details remain visible with center focus. A failing crop is changed via `levelFocus` only after visual review, not by model.
+* Real-provider visual-hints trial is owned by Muse. For 20 turns whose final prose clearly states an allowlisted LEVEL, target >=18 correct non-null hints; for 10 prose-negative and 10 unknown-level cases, require 0 false positive stage. Record actual numerator/denominator and failures; do not claim success solely from mocked CI.
+* Mocked HTTP end-to-end tests still run the real Reader client, publication coordinator and receipt readback. Provider-real success is separately signed by Muse.
+
+The manifest is located at `src/lib/reader/stage-assets.ts`. Reader presentation is implemented by `src/components/reader/ReaderStage.tsx`, `src/pages/ReaderPage.tsx` and `src/pages/reader.css`.
