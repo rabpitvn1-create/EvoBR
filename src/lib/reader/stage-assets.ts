@@ -22,18 +22,30 @@ export interface ReaderSceneHintsV1 {
   levelId:string
   entityIds:string[]
 }
+/**
+ * Non-authoritative, best-effort decoration. All invalid or incomplete model
+ * hints reduce to null; these checks must never veto Reader publication.
+ */
+export function normalizeReaderSceneHintsV1(value:unknown):ReaderSceneHintsV1|null{
+  if(!value||typeof value!=='object'||Array.isArray(value))return null
+  const fields=value as Record<string,unknown>
+  if(typeof fields.levelId!=='string'||
+    !Object.prototype.hasOwnProperty.call(READER_STAGE_ASSETS_V1.levels,fields.levelId))return null
+  if(!Array.isArray(fields.entityIds)||fields.entityIds.length>16||
+    fields.entityIds.some(id=>typeof id!=='string'))return null
+  return {levelId:fields.levelId,entityIds:[...new Set(
+    fields.entityIds.filter((id:string)=>
+      Object.prototype.hasOwnProperty.call(READER_STAGE_ASSETS_V1.entities,id))
+  )].slice(0,3)}
+}
+export function serializeReaderSceneHintsV1(value:unknown):string|null{
+  const normalized=normalizeReaderSceneHintsV1(value)
+  return normalized?JSON.stringify({levelId:normalized.levelId,entityIds:normalized.entityIds}):null
+}
 export function parseReaderSceneHintsV1(raw:string|null):ReaderSceneHintsV1|null{
   if(!raw||raw.length>8192)return null
-  try{
-    const obj:unknown=JSON.parse(raw)
-    if(!obj||typeof obj!=='object'||Array.isArray(obj))return null
-    const fields=obj as Record<string,unknown>
-    if(typeof fields.levelId!=='string'||!Object.prototype.hasOwnProperty.call(READER_STAGE_ASSETS_V1.levels,fields.levelId))return null
-    const ids=Array.isArray(fields.entityIds)?fields.entityIds:[]
-    return {levelId:fields.levelId,entityIds:[...new Set(ids.filter(
-      (id):id is string=>typeof id==='string'&&Object.prototype.hasOwnProperty.call(READER_STAGE_ASSETS_V1.entities,id)
-    ))].slice(0,3)}
-  }catch{return null}
+  try{return normalizeReaderSceneHintsV1(JSON.parse(raw) as unknown)}
+  catch{return null}
 }
 /** Vite/Pages base path is applied only to trusted manifest paths. */
 export function readerStageAssetUrlV1(slot:string):string{
