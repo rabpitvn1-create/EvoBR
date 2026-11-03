@@ -1,12 +1,14 @@
 # P1 Vietnamese prose baseline: protocol and harness operation
 
-**Status:** P1 part 1, harness implementation submitted for Muse review. **No real-provider execution has been completed in this environment.** This document records the test protocol; literary rubric and numerical pass/fail thresholds are for Nguyen to approve at the P1 D10 gate, not for the harness author to choose after viewing results.
+**Status:** P1 baseline harness has passed Muse's part-1 review; subsequent Codex opt-in and four-voice tournament additions await review. **No real-provider execution has been completed in this environment.** Nguyen delegated the D10 literary decision to Muse on 2026-11-03. The fixed literary thresholds are recorded in [reader-d10-approval-draft.md](./reader-d10-approval-draft.md) before outcomes; Muse preregisters them before rating. Operational token/latency/cost limits are determined by Muse only from real measurements.
 
 ## 1. Scope and invariants
 
 The executable harness is `scripts/quality-evals/reader-vietnamese-baseline.mjs`. It evaluates **20 consecutive linked Vietnamese prose turns** in a fixed Backrooms Level 0 scenario featuring Cao Minh. Every new prompt includes the **exact text and SHA256** of *all prior completed turns*. No choice generation, reader tables, chapter editor, Canon adoption, or fabricated NPC names as known Canon. No forced ending.
 
 Scenario ID: `evobr-p1-cao-minh-level0-v1`. Fixed setting: Cao Minh awakens alone in yellow rooms with fluorescent hum and damp carpet, without a map or companions. The prompt permits subjective perceptions but forbids the model from asserting unsupported Backrooms Canon. Scenario, fixed system prompt and prior-turn history form a deterministic test *input*; stochastic model text is not predetermined.
+
+The single-run harness supports a versioned optional `EVO_P1_VOICE_PROFILE` from `scripts/quality-evals/reader-voice-profiles.mjs`. Four defined profiles change **only the system-prompt style directive**, not Cao Minh's scenario, prior-turn inclusion, Canon constraints or model settings. The four-run orchestration is `scripts/quality-evals/reader-voice-tournament.mjs generate`, which produces four independent, 20-turn histories and rejects mixed provider/model configs. No profile results exist yet.
 
 The harness calls the **actual imported StoryForge `src/lib/ai/client.ts::chat` function through Vite in a fresh Playwright Chromium browser context**. It does not use a self-written OpenAI HTTP client, a fake transport, mock replies or a second backend. This P1-only offline harness does **not** claim a registered reader formal AI entry exists yet. Reader formal Skill/entry wiring remains P4, as agreed in P0.5. The client category is `reader.prose.baseline`, intentionally not registered for any reader mutation.
 
@@ -25,6 +27,7 @@ Required environment variables (set in the operator's terminal/runner, **not** c
 
 Optional environment:
 
+- `EVO_P1_VOICE_PROFILE` selects one fixed style profile (`cinematic_minimal`, `sensory_urgent`, `psychological_slow`, `restrained_intimate`). The tournament sets it automatically; single-run mode may omit it for the original neutral baseline.
 - `EVO_P1_TEMPERATURE` defaults to `0.8`.
 - `EVO_P1_MAX_TOKENS` defaults to `1400`.
 - `EVO_P1_CONTEXT_WINDOW` defaults to `65536`. It is an operator-declared limit, **not a provider capability verified by this document**. The client rejects prompts that cannot fit rather than silently trimming prior turns.
@@ -53,11 +56,20 @@ The report contains model output and scenario text, but **no API key, Authorizat
 
 **Known limitations:** Browser CORS must permit the ordinary HTTP model client transport; Codex uses the repo's loopback same-origin bridge and a local authenticated CLI rather than browser-to-provider CORS. an incompatible provider or missing account configuration is a *real blocked result*, not permission to use mocks. This harness benchmarks prose-only baseline calls. It does not measure the complete P4 six-call V3-plus-choices pipeline. If a separate genuine V3 smoke run is attempted in P1 part 2, it must have recorded real callbacks/evidence and be reported distinctly; otherwise mark V3 smoke as **not executed**.
 
-## 4. Blind-review handoff to P1 part 3
+## 4. Muse-led four-voice selection and fixed D10 preregistration
 
-The existing questionnaire `scripts/quality-evals/longform-choice-questionnaire.mjs` defines six axes: `immersion`, `causality`, `payoff`, `voice`, `pace`, `continuity`. It expects paired samples (`baseline` and `improved`) and emits participant-specific randomized A/B packs with the organizer mapping kept separately. **Do not falsely label one generated baseline as an A/B study.** A subsequent independent comparison must supply a genuine second version; otherwise create a versioned blind single-arm review pack using the same six-axis scoring semantics and neutral identifiers, explicitly documenting that it is not A/B.
+The upstream `scripts/quality-evals/longform-choice-questionnaire.mjs` defines six axes: `immersion`, `causality`, `payoff`, `voice`, `pace`, `continuity`. It assumes a genuine A/B pair and is **not** repurposed to claim fake comparative trials. `reader-blind-review.mjs` remains a single-arm tool. For the four-voice experiment the orchestrator uses the same six scoring dimensions and creates **four independent neutral blind packets** through `reader-voice-tournament.mjs pack`. Each packet contains a complete 20-turn history and no profile/provider labels; only the organizer retains the shuffled identity map.
 
-The final D10 package must contain a proposed six-axis rubric, pass/fail thresholds, critical Canon-error criterion and token/latency/cost ceilings. **Nguyen must sign thresholds before formal review scores are revealed and used for acceptance**. P1 part 1 does not decide those values. Human ratings are not automatically inferred from model output.
+Muse now owns D10 literary adjudication. Nguyen's fixed pre-result thresholds: **overall mean ≥ 4.0/5 across 20 turns × six axes; every axis ≥ 3.5; voice ≥ 4.0; zero confirmed severe Canon errors; winner highest overall, voice breaks a tie; no qualifying profile means a new round, never weaker limits.** Muse must preregister the rubric before seeing scores. Full canonical incident categories, rating anchors and detailed procedure are in [reader-d10-approval-draft.md](./reader-d10-approval-draft.md). Operational token/latency/cost ceilings are separate and must derive from real P1.2 metrics, not the previous unapproved numerical draft.
+
+Run commands after all four real series are complete:
+
+```bash
+node scripts/quality-evals/reader-voice-tournament.mjs generate ./p1-voice-results
+node scripts/quality-evals/reader-voice-tournament.mjs pack ./p1-voice-results ./p1-voice-blind Muse
+```
+
+Muse gets `participants/` only, never `organizer-key.json` before all reviews and Canon audits are sealed. Rank afterwards with `reader-voice-tournament.mjs rank` and preserve the scores and metrics of *all four* profiles, including losers. No mocked or partial report is accepted for blind selection.
 
 ## 5. Verification for this part
 
