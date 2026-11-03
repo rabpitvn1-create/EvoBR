@@ -167,6 +167,35 @@ describe('P4 Reader V01-V13 governed generation',()=>{
     const forged=raw.replace(quote,'bằng chứng không có thật')
     expect(()=>parseReaderChoiceReviewV1(forged,handle,prose,[item])).toThrow(/verbatim/)
   })
+  it('V13: whole JSON fences preserve choices, verifier and V3 review semantics',async()=>{
+    const {scope,sid}=await fixture(),{handle}=await frozenHandle(scope,sid)
+    const fenced=(value:string)=>'\`\`\`json\\n'+value+'\\n\`\`\`'
+    const plainChoices=parseReaderBranchChoicesV1(branches,prose)
+    expect(parseReaderBranchChoicesV1(fenced(branches),prose)).toEqual(plainChoices)
+    const item=plainChoices.choices[0]
+    const review=JSON.stringify({issues:[{choiceKey:item.choiceKey,
+      code:'choice-prose-contradiction',choiceQuote:item.text,
+      evidence:{sourceKey:'finalProse',quote},reason:'Mâu thuẫn với prose.'}]})
+    expect(parseReaderChoiceReviewV1(fenced(review),handle,prose,[item]))
+      .toEqual(parseReaderChoiceReviewV1(review,handle,prose,[item]))
+    expect(()=>parseReaderBranchChoicesV1(fenced('not JSON'),prose)).toThrow()
+    expect(()=>parseReaderChoiceReviewV1(fenced('not JSON'),handle,prose,[item])).toThrow()
+    expect(()=>parseReaderBranchChoicesV1(fenced(branches)+' trailing',prose)).toThrow()
+    expect(parseReaderBranchChoicesV1(fenced(JSON.stringify({choices:[{
+      choiceKey:'fake',text:'Mở hầm',sourceQuote:'trích dẫn giả mạo',
+    }]})),prose).choices).toEqual([])
+    const badReview=review.replace(quote,'trích dẫn giả mạo')
+    expect(()=>parseReaderChoiceReviewV1(fenced(badReview),handle,prose,[item])).toThrow(/verbatim/)
+    const order=scripted({'reader-prose':[prose],
+      'reader-v3-review':[fenced(pass)],
+      'reader-choices':[fenced(branches)],
+      'reader-choice-verifier':[fenced(choicePass)]})
+    const result=await generate(scope,sid)
+    expect(order).toEqual(['reader-prose','reader-v3-review','reader-choices','reader-choice-verifier'])
+    expect(result.candidate.v3.status).toBe('passed')
+    expect(result.candidate.choices.fallbackContinue).toBe(false)
+    expect(result.candidate.choices.choices[0].choiceKey).toBe('look-door')
+  })
   it('V06: invalid model branches exhaust retry=0, create precisely one real Continue',async()=>{
     const {scope,sid}=await fixture()
     const order=scripted({'reader-prose':[prose],'reader-v3-review':[pass],
