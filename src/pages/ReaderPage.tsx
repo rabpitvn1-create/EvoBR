@@ -278,7 +278,7 @@ export default function ReaderPage(){
         <button type="button" className="ebr-reader-session-toggle" aria-expanded={sessionPickerOpen}
           aria-controls="ebr-reader-session-picker"
           onClick={()=>setSessionPickerOpen(value=>!value)} disabled={busy}>
-          <span>Phiên đọc · {view?.session.id??'Chưa chọn'}</span>
+          <span>Phiên đọc · {view?.session.id===undefined?'Chưa chọn':'#'+view.session.id}</span>
           <span aria-hidden="true">▾</span>
         </button>
         {sessionPickerOpen&&<div id="ebr-reader-session-picker" className="ebr-reader-session-picker">
