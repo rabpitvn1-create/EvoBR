@@ -20278,6 +20278,10 @@
           "kind": "type"
         },
         {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
           "path": "src/lib/memory/artifact-store.ts",
           "kind": "module"
         },
@@ -20300,6 +20304,10 @@
         {
           "path": "src/lib/reader/run.ts",
           "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/semantic-review.ts",
+          "kind": "module"
         },
         {
           "path": "src/lib/types/index.ts",
