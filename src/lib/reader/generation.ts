@@ -131,7 +131,6 @@ export async function generateReaderTurnCandidateV1(input:{
     try{
       const response=await callReaderModelV1({
         handle,stage:READER_STEPS_V1.prose,
-        caller:'src/lib/reader/generation.ts',
         messages:generationMessages,resolution,signal:input.signal,
       })
       originalProse=response.text
