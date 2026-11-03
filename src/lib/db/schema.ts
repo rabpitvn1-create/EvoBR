@@ -8,15 +8,20 @@
 import Dexie, { type Table } from 'dexie'
 import type { WorldNarrativeIndexCacheV1 } from '../types/narrative-index-cache'
 import type { AgentConversation, AgentEvent, AgentRunArtifactRecordV1, AgentRunCheckpointRecord, AgentRunEventRecord, AgentRunRecord, Chapter, Character, CharacterDrivenPlan, CharacterRelation, CodexCategory, CodexEntry, CreativeRules, CultivationProgress, CultivationSystem, DetailedOutline, EmotionBeatCard, Foreshadow, Geography, HistoricalKeyword, HistoricalTimelineEvent, History, ImportantLocation, ImportFileBlob, ImportJob, ImportLog, ImportSession, InspirationWorkspace, ItemLedgerEntry, NarrativeBeat, NarrativeChoice, NarrativeModule, NarrativeNode, NodeFlow, NodeRunRecord, Note, OutlineNode, OwnershipScopeChangeRecord, PowerSystem, Project, PromptTemplate, PromptWorkflow, Reference, ReferenceAnalysisRun, ReferenceAnalysisSource, ReferenceChunkAnalysis, Snapshot, StateCard, StoryArc, StoryCore, StorylineCrossing, StorylineProgress, StoryTimelineEvent, UserStyleProfile, Work, WorkCharacterBinding, WorkspaceDocumentBindingV1, World, WorldDerivationV1, WorldGroup, WorldGroupLink, WorldNode, WorldRelease, WorldRevision, WorldRulesProfile, Worldview } from '../types'
+import type {
+  ReaderSessionV1, ReaderTurnV1, ReaderChoiceV1, ReaderDecisionV1,
+  ReaderFactV1, ReaderKnowledgeV1, ReaderMemoryV1,
+  ReaderRetrievalChunkV1, ReaderPublicationRunV1,
+} from '../types/reader'
 import type { AIUsageEntry } from '../ai/usage-log'
 import type { KnowledgeLedgerEntry } from '../types/knowledge-ledger'
 import type { NarrativeSummaryNode } from '../types/narrative-summary'
 import type { RetrievalChunk } from '../types/retrieval-chunk'
 import type { TemporalFact } from '../types/temporal-fact'
 export const STORYFORGE_DATABASE_NAME = 'evobr-longform'
-export const STORYFORGE_SCHEMA_VERSION = 13
+export const STORYFORGE_SCHEMA_VERSION = 14
 /** Long Form profile of upstream schema 13; isolated from StoryForge browser data. */
-export const STORYFORGE_STORES = {
+const STORYFORGE_STORES_V13 = {
 projects: '++id, &workspaceUid, workspacePurpose, name, createdAt, updatedAt',
 worlds: '++id, projectId, identityKind, code, [projectId+identityKind], [projectId+updatedAt]',
 works: '++id, projectId, worldId, code, &[projectId+code], [projectId+worldId], [worldId+updatedAt], status, activeNarrativeModuleId',
@@ -90,7 +95,37 @@ promptTemplates: '++id, scope, moduleKey, isActive, updatedAt',
 promptWorkflows: '++id, scope, isDefault, updatedAt',
 aiUsageLog: '++id, projectId, timestamp, category, model'
 } as const satisfies Record<string,string>
+/**
+ * Additive reader v14 schema. Keep the original v13 map untouched so Dexie
+ * upgrades existing evobr-longform databases without destructive rebuilding.
+ */
+export const READER_STORES_V14 = {
+readerSessions: '++id, projectId, workId, [projectId+workId], parentSessionId, forkTurnId, headTurnId, [projectId+status]',
+readerTurns: '++id, projectId, sessionId, &[sessionId+turnOrdinal], [sessionId+parentTurnId], contentHash',
+readerChoices: '++id, projectId, sessionId, turnId, &[turnId+choiceKey]',
+readerDecisions: '++id, projectId, sessionId, &[sessionId+requestKey], sourceTurnId, choiceId, resultTurnId',
+readerFacts: '++id, projectId, sessionId, originTurnId, [sessionId+status]',
+readerKnowledge: '++id, projectId, sessionId, characterId, originTurnId',
+readerMemory: '++id, projectId, sessionId, &[sessionId+throughTurnId], [sessionId+status]',
+readerRetrievalChunks: '++id, projectId, sessionId, sourceTurnId, [sessionId+sourceTurnId]',
+readerPublicationRuns: '++id, projectId, sessionId, &[sessionId+requestKey], runId, resultTurnId',
+} as const satisfies Record<string, string>
+
+export const STORYFORGE_STORES = {
+  ...STORYFORGE_STORES_V13,
+  ...READER_STORES_V14,
+} as const satisfies Record<string, string>
+
 export class StoryForgeDB extends Dexie {
+readerSessions!: Table<ReaderSessionV1, number>
+readerTurns!: Table<ReaderTurnV1, number>
+readerChoices!: Table<ReaderChoiceV1, number>
+readerDecisions!: Table<ReaderDecisionV1, number>
+readerFacts!: Table<ReaderFactV1, number>
+readerKnowledge!: Table<ReaderKnowledgeV1, number>
+readerMemory!: Table<ReaderMemoryV1, number>
+readerRetrievalChunks!: Table<ReaderRetrievalChunkV1, number>
+readerPublicationRuns!: Table<ReaderPublicationRunV1, number>
 projects!: Table<Project>
 worlds!: Table<World, number>
 works!: Table<Work, number>
@@ -163,6 +198,10 @@ worldReleases!: Table<WorldRelease, number>
 worldNarrativeIndexCaches!: Table<WorldNarrativeIndexCacheV1, number>
 worldDerivations!: Table<WorldDerivationV1, number>
 workspaceDocuments!: Table<WorkspaceDocumentBindingV1, number>
-constructor(databaseName = STORYFORGE_DATABASE_NAME) { super(databaseName); this.version(STORYFORGE_SCHEMA_VERSION).stores(STORYFORGE_STORES) }
+constructor(databaseName = STORYFORGE_DATABASE_NAME) {
+  super(databaseName)
+  this.version(13).stores(STORYFORGE_STORES_V13)
+  this.version(STORYFORGE_SCHEMA_VERSION).stores(STORYFORGE_STORES)
+}
 }
 export const db = new StoryForgeDB()
