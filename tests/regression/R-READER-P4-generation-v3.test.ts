@@ -14,7 +14,7 @@ import {generateReaderTurnCandidateV1,verifyReaderGenerationCandidateV1,
 import {parseReaderBranchChoicesV1,parseReaderChoiceReviewV1,
   buildReaderChoiceMessagesV1} from '../../src/lib/reader/choices'
 import {prepareReaderContextV1} from '../../src/lib/reader/context'
-import {createReaderDurableRunV1} from '../../src/lib/reader/run'
+import {createReaderDurableRunV1,assertReaderFrozenStageInputV1} from '../../src/lib/reader/run'
 import {getAgentSkillV1} from '../../src/lib/agent/skill-registry'
 import {freezeFormalAIEntryBindingV1,executeFrozenFormalAIEntryV1,
   getFormalAIEntryBindingV1} from '../../src/lib/agent/formal-ai-entry'
@@ -267,6 +267,12 @@ describe('P4 Reader V01-V13 governed generation',()=>{
     await append(scope,sid,'Cao Minh tiếp tục bước đi qua vũng nước ẩm trên nền.')
     expect(await verifyReaderGenerationCandidateV1({
       workspace:scope,frozen,handle,candidate})).toBe(false)
+  })
+  it('V12: changing only frozen source segments is detected before any model call',async()=>{
+    const {scope,sid}=await fixture(),{handle,frozen}=await frozenHandle(scope,sid)
+    frozen.assembly.segments[0].content+='tampered but aggregate text unchanged'
+    await expect(assertReaderFrozenStageInputV1(handle)).rejects.toThrow(/segment altered/)
+    expect(vi.mocked(callReaderModelV1)).not.toHaveBeenCalled()
   })
   it('V13 preparation: frozen formal client route exists; production-provider smoke must be signed separately by Muse',async()=>{
     const {scope,sid}=await fixture(),{handle}=await frozenHandle(scope,sid)
