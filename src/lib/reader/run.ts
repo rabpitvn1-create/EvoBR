@@ -56,6 +56,7 @@ export interface ReaderRunHandleV1 {
     stepId:ReaderStepV1
     attempt:number
     requestHash:string
+    dispatchStarted:boolean
     responseHash:string|null
     estimatedInputTokens:number
     reservedOutputTokens:number
@@ -197,7 +198,7 @@ export async function beginReaderModelStepV1(input:{
   })
   handle.calls++
   handle.records.push({
-    stepId,attempt,requestHash,responseHash:null,
+    stepId,attempt,requestHash,dispatchStarted:false,responseHash:null,
     estimatedInputTokens,reservedOutputTokens:input.maxOutputTokens,
     inputTokens:null,outputTokens:null,latencyMs:null,requestLifecycle:null,error:null,
   })
