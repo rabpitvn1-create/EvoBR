@@ -190,7 +190,7 @@ export async function finishReaderModelStepV1(input:{
   complete?:boolean
 }):Promise<void>{
   const {handle,stepId,attempt}=input
-  const record=handle.records.findLast(x=>x.stepId===stepId&&x.attempt===attempt)
+  const record=[...handle.records].reverse().find(x=>x.stepId===stepId&&x.attempt===attempt)
   if(!record||record.responseHash)fail('missing pending reader model request')
   const responseHash=await hashCanonicalValue(input.output)
   await runEvent(handle,'model.responded',{stepId,attempt,outputHash:responseHash})
@@ -215,7 +215,7 @@ export async function failReaderModelStepV1(
   handle:ReaderRunHandleV1,stepId:ReaderStepV1,attempt:number,error:unknown,
 ):Promise<void>{
   const reason=error instanceof Error?error.message:String(error)
-  const record=handle.records.findLast(x=>x.stepId===stepId&&x.attempt===attempt)
+  const record=[...handle.records].reverse().find(x=>x.stepId===stepId&&x.attempt===attempt)
   if(record)record.error=reason.slice(0,400)
   if(handle.snapshot.projection.steps[stepId]?.status==='running'){
     await runEvent(handle,'step.failed',{
