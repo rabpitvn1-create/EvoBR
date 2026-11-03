@@ -18,10 +18,10 @@ Prerequisites from `AGENTS.md`: **Node.js 24**, `npm ci`, Playwright Chromium in
 
 Required environment variables (set in the operator's terminal/runner, **not** committed to Git):
 
-- `EVO_P1_PROVIDER`: existing `AIProvider` value such as `custom` or `gemini`, appropriate to the actual endpoint.
+- `EVO_P1_PROVIDER`: existing `AIProvider` value such as `custom`, `gemini` or `codex`. `codex` is the repo's authenticated local bridge, **not** an OpenAI-compatible HTTP endpoint.
 - `EVO_P1_MODEL`: configured real model ID.
-- `EVO_P1_BASE_URL`: real OpenAI-compatible base URL, not `/chat/completions` path.
-- `EVO_P1_API_KEY`: real API credential. For a deliberately authless local Ollama service only, `EVO_P1_PROVIDER=ollama` and `EVO_P1_ALLOW_EMPTY_KEY=1` permit an empty key.
+- `EVO_P1_BASE_URL`: real OpenAI-compatible base URL, not `/chat/completions` path; **not required for the explicitly opted-in `codex` route** because `src/lib/ai/client.ts` dispatches via `/storyforge/local-codex/v1`. The harness uses an ignored local placeholder in `AIConfig` for that route.
+- `EVO_P1_API_KEY`: real API credential. For a deliberately authless local Ollama service, `EVO_P1_PROVIDER=ollama` and `EVO_P1_ALLOW_EMPTY_KEY=1` permit an empty key. **Codex route requires `EVO_P1_ALLOW_CODEX_LOGIN=1` explicitly and uses the authenticated Codex CLI session instead of an external key.** It preflights the actual bridge `/status` and `/models`, requiring `ready` and the requested model ID.
 
 Optional environment:
 
@@ -38,7 +38,7 @@ Example invocation once all environment variables above have been securely confi
 node scripts/quality-evals/reader-vietnamese-baseline.mjs ./p1-results
 ```
 
-The harness refuses to run when provider details are missing, Node is unsupported, Vite cannot start, Chromium is unavailable or the real client cannot complete a turn. There is **no mock fallback**. On interruption it writes a partial report marked `blocked` or `failed`, not `completed`. Rerunning starts a new measured run and does not silently reuse a possibly billed attempt.
+The harness refuses to run when provider details are missing, Node is unsupported, Vite cannot start, Chromium is unavailable or the real client cannot complete a turn. The Codex route additionally fails when CLI is absent, the app-server login is not ready, the login isolation/version requirement is unmet, or the authenticated `/models` catalog excludes the requested model. There is **no mock fallback**. On interruption it writes a partial report marked `blocked` or `failed`, not `completed`. Rerunning starts a new measured run and does not silently reuse a possibly billed attempt.
 
 ## 3. Output schema and measurements
 
@@ -51,7 +51,7 @@ Each run generates a local `baseline-<uuid>.json` report, including:
 
 The report contains model output and scenario text, but **no API key, Authorization header or raw provider response body**. Keep reports outside tracked source and distribute only reviewed/appropriately redacted evaluation artifacts.
 
-**Known limitations:** Browser CORS must permit the real client transport; an incompatible provider or missing account configuration is a *real blocked result*, not permission to use mocks. This harness benchmarks prose-only baseline calls. It does not measure the complete P4 six-call V3-plus-choices pipeline. If a separate genuine V3 smoke run is attempted in P1 part 2, it must have recorded real callbacks/evidence and be reported distinctly; otherwise mark V3 smoke as **not executed**.
+**Known limitations:** Browser CORS must permit the ordinary HTTP model client transport; Codex uses the repo's loopback same-origin bridge and a local authenticated CLI rather than browser-to-provider CORS. an incompatible provider or missing account configuration is a *real blocked result*, not permission to use mocks. This harness benchmarks prose-only baseline calls. It does not measure the complete P4 six-call V3-plus-choices pipeline. If a separate genuine V3 smoke run is attempted in P1 part 2, it must have recorded real callbacks/evidence and be reported distinctly; otherwise mark V3 smoke as **not executed**.
 
 ## 4. Blind-review handoff to P1 part 3
 
@@ -62,3 +62,16 @@ The final D10 package must contain a proposed six-axis rubric, pass/fail thresho
 ## 5. Verification for this part
 
 On the P1 branch, verify the new script and this document, ensure neither changes `src/lib/ai/adapters/prompt-guards.ts` or editor logic, and check that PR's base is the P0-merged `feat/import-storyforge-longform`. Where Node24/npm or real provider are absent, report that limitation rather than asserting a 20-turn run or green CI.
+
+
+## 6. P1 part 2 environment evidence, 2026-11-03
+
+This section records **execution environment availability**, not model benchmark outcomes:
+
+- Container Node is `v22.16.0` at `/opt/nvm/versions/node/v22.16.0/bin/node`. Only Node 22 was present under `/opt/nvm/versions/node/`; the Node 24 requirement from AGENTS.md is not met. No cached Node 24 tarball was found under the installed nvm cache.
+- `command -v codex` returned no executable. No local authenticated Codex CLI was available in this container. The bridge's `scripts/local-codex/runtime.mjs` invokes the `codex app-server` executable and consumes its **existing CLI login**; without that executable it cannot report a real authenticated model call.
+- `git ls-remote https://github.com/rabpitvn1-create/EvoBR.git HEAD` failed with `Could not resolve host: github.com`; normal Git and package installation through public network were unavailable in the current container. GitHub connector access was sufficient to read, patch, commit and open the PR, but cannot provide this local CLI's authenticated process.
+- Neither `EVO_P1_PROVIDER` nor `EVO_P1_MODEL`, `EVO_P1_BASE_URL`, `EVO_P1_API_KEY` was present. No model usage report exists. **20 real turns = 0/20 executed; V3 provider smoke = not executed; latency, token usage and cost = not measured.**
+- Codex opt-in support was added in P1 part 2 for an appropriate external runner. This change by itself does **not** make an authenticated provider available in this environment.
+
+To execute on a suitable machine, install Node 24/dependencies and authenticated Codex CLI, choose a model listed by the bridge, then set `EVO_P1_PROVIDER=codex`, `EVO_P1_MODEL=<verified model ID>` and `EVO_P1_ALLOW_CODEX_LOGIN=1`. Alternatively provide a real HTTP-compatible provider config through the operator's environment. In both cases the harness stays on StoryForge's `chat()` transport and never substitutes mock output.
