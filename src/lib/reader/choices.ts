@@ -231,6 +231,10 @@ export async function runReaderChoiceStageV1(input:{
     let parsed:{choices:ReaderBranchChoiceV1[];rejected:number}
     try{parsed=parseReaderBranchChoicesV1(response.text,finalProse)}
     catch{parsed={choices:[],rejected:1}}
+    // A valid choices envelope may carry a visual hint even when it has no
+    // surviving branches; Continue remains a deterministic choice.
+    try{sceneHints=normalizeReaderSceneHintsV1(parseJson(response.text).sceneHints)}
+    catch{sceneHints=null}
     if(!parsed.choices.length){
       // Preserve a real response and deterministic rejection as explicit
       // evidence. A retry is possible only if one model call remains reserved
@@ -245,10 +249,6 @@ export async function runReaderChoiceStageV1(input:{
       break
     }
     branches=parsed.choices
-    // Decorative only: malformed optional hints never invalidate a valid
-    // choice response or turn. The receipt hash still binds the accepted hint.
-    try{sceneHints=normalizeReaderSceneHintsV1(parseJson(response.text).sceneHints)}
-    catch{sceneHints=null}
     await completeReaderModelStepV1(handle,READER_STEPS_V1.choices,attempt,responseHash)
     break
   }
