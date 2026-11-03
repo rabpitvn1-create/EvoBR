@@ -325,7 +325,7 @@ const ADOPTION_SCHEMAS_RAW: CollectionAdoptionSpec[] = [
       { field: 'analysisRunId', target: 'referenceAnalysisRuns' },
     ],
     replaceScope: ['analysisRunId'],
-  }
+  },
   // P2 reader records are coordinator-owned structured targets, not authoring
   // Chapter targets. AI prose/choices must first pass P4/P5 evidence gates;
   // registering a field here does not grant any formal AI Skill write rights.
