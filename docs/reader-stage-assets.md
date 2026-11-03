@@ -11,7 +11,7 @@ The UI is a presentation layer only; it never changes the confirmed Canon or the
 | Entities (eight) | `smiler`, `clump`, `deathmoth`, `skin-stealer`, `wretch`, `duller`, `slenderman`, `hostile-faceling` | `public/reader-assets/entities/ID.webp` | 116,350 total |
 | **Total** | **16 images** | **Asset files supplied by Muse separately** | **410,868** |
 
-LEVEL file sizes as measured by Muse: 0: 22,284; 1: 24,334; 2: 20,752; 3: 22,872; 4: 9,024; 5: 53,636; 6: 3,268 bytes. Sources are landscape, exported 760×440 WebP. Default focus is 50%/50% for all seven, encoded as `levelFocus` by ID so cropping can later be adjusted independently.
+LEVEL file sizes as measured by Muse: 0: 22,284; 1: 24,334; 2: 20,752; 3: 22,872; 4: 9,024; 5: 53,636; 6: 3,268 bytes. Sources are landscape, exported 760×440 WebP. Default focus is 50%/50% for Levels 0–4 and 6; Level 5 is set to 50%/28% for U5 review because the source contains embedded “TERROR HOTEL” lettering at the lower edge. The 760×440 source and 380×220 frame have the same 19:11 ratio, so `object-position` alone may not displace that lettering meaningfully. Muse must inspect the new Level 5 screenshot before declaring this issue resolved; if still visible, the artwork remains unchanged and the crop decision stays with Muse.
 
 Cao Minh uses a 438×780 WebP cut from a verified 1024×1536 RGBA Codex; alpha bbox was 850×1512, safely above the source 2× threshold. Image is 172×260 CSS px at the 412px viewport, right anchored, extending 40px above the stage. The character overlay is optional if loading unexpectedly fails, with no fabricated replacement.
 
