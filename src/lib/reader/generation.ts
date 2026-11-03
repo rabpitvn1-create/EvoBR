@@ -190,7 +190,7 @@ export async function generateReaderTurnCandidateV1(input:{
       provider:resolution.config.provider,model:resolution.config.model,
       originalProse,originalProseHash:await hashCanonicalValue(originalProse),
       finalProse,finalProseHash,
-      v3,choices,sceneHints:choices.sceneHints,modelCalls:handle.calls,
+      v3,choices,...(choices.sceneHints?{sceneHints:choices.sceneHints}:{}),modelCalls:handle.calls,
       modelCallRecords:handle.records.map(r=>({...r})),
     }
     const candidate:ReaderGenerationCandidateV1={
