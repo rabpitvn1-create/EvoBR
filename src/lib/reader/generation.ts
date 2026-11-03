@@ -176,7 +176,7 @@ export async function generateReaderTurnCandidateV1(input:{
       fail('choice evidence or frozen finalProseHash invalid')
     await assertReaderContextCurrentV1(input.workspace,frozen)
     const body={
-      version:READER_GENERATION_CANDIDATE_VERSION_V1 as const,
+      version:READER_GENERATION_CANDIDATE_VERSION_V1 as typeof READER_GENERATION_CANDIDATE_VERSION_V1,
       runId:handle.snapshot.run.id,sessionId:frozen.scope.sessionId,
       expectedRevision:frozen.scope.expectedRevision,
       headTurnId:frozen.scope.headTurnId,
@@ -185,7 +185,7 @@ export async function generateReaderTurnCandidateV1(input:{
       canonBaselineHash:frozen.scope.canonBaselineHash,
       lineageFingerprint:frozen.scope.lineageFingerprint,
       voiceProfile:'restrained_intimate' as const,
-      voicePromptVersion:READER_PROSE_PROMPT_VERSION_V1,
+      voicePromptVersion:READER_PROSE_PROMPT_VERSION_V1 as typeof READER_PROSE_PROMPT_VERSION_V1,
       provider:resolution.config.provider,model:resolution.config.model,
       originalProse,originalProseHash:await hashCanonicalValue(originalProse),
       finalProse,finalProseHash,
