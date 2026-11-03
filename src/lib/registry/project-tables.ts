@@ -838,10 +838,10 @@ const PROJECT_TABLE_REGISTRATIONS: ProjectTableRegistration[] = [
   ],
   exportRemap: [
     { field: 'workId', remapVia: 'works', exportAs: '_workExportId', onUnmapped: 'require' },
-    { field: 'parentSessionId', remapVia: 'readerSessions', selfTree: true, exportAs: '_parentExportId' },
-    { field: 'forkTurnId', remapVia: 'readerTurns', exportAs: '_forkTurnExportId', deferImport: true },
-    { field: 'headTurnId', remapVia: 'readerTurns', exportAs: '_headTurnExportId', deferImport: true },
-    { field: 'memoryReadyThroughTurnId', remapVia: 'readerTurns', exportAs: '_memoryReadyThroughTurnExportId', deferImport: true },
+    { field: 'parentSessionId', remapVia: 'readerSessions', selfTree: true, exportAs: '_parentExportId', onUnmapped: 'require' },
+    { field: 'forkTurnId', remapVia: 'readerTurns', exportAs: '_forkTurnExportId', deferImport: true, onUnmapped: 'require' },
+    { field: 'headTurnId', remapVia: 'readerTurns', exportAs: '_headTurnExportId', deferImport: true, onUnmapped: 'require' },
+    { field: 'memoryReadyThroughTurnId', remapVia: 'readerTurns', exportAs: '_memoryReadyThroughTurnExportId', deferImport: true, onUnmapped: 'require' },
   ],
   note: 'Pinned immutable Canon baseline, fork ancestry and CAS head; no live Work memory fallback.' },
 { table: db.readerTurns, name: 'readerTurns', owner: 'project', exportable: true,
@@ -850,7 +850,7 @@ const PROJECT_TABLE_REGISTRATIONS: ProjectTableRegistration[] = [
   defaults: { parentTurnId: null, sceneHintsJson: null, status: 'published' },
   exportRemap: [
     { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
-    { field: 'parentTurnId', remapVia: 'readerTurns', selfTree: true, exportAs: '_parentExportId' },
+    { field: 'parentTurnId', remapVia: 'readerTurns', selfTree: true, exportAs: '_parentExportId', onUnmapped: 'require' },
   ],
   refs: [
     { kind: 'simple', field: 'id', target: 'readerChoices[turnId]', onDelete: 'cascade' },
