@@ -1,7 +1,7 @@
 /** P3 closed Reader source gateway. No regular Work source may be read through it. */
 import { hashCanonicalValue } from '../agent/run/hash'
 import { sha256Text } from '../ai/chapter-memory/text-normalization'
-import type { AssembleContextInput, ReaderContextScopeV1, ReaderFrozenSourceSnapshotV1 } from '../registry/types'
+import type { AssembleContextInput, ReaderContextScopeV1 } from '../registry/types'
 
 export const READER_SOURCE_KEYS_V1 = [
   'reader.baseline',
