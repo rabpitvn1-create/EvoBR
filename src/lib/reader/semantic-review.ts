@@ -218,7 +218,7 @@ export async function runReaderDurableSemanticReviewV1(input:{
   await assertReaderContextCurrentV1(handle.scope,handle.frozen)
   if(cycle.status==='passed')assertReaderVietnameseProseV1(cycle.outputText)
   const body={
-    version:READER_V3_RECEIPT_VERSION_V1 as const,runId:handle.snapshot.run.id,
+    version:READER_V3_RECEIPT_VERSION_V1 as typeof READER_V3_RECEIPT_VERSION_V1,runId:handle.snapshot.run.id,
     attemptHash:handle.identity.attemptHash,
     contextManifestHash:handle.frozen.contextManifestHash,
     originalProseHash:await hashCanonicalValue(input.originalText),
