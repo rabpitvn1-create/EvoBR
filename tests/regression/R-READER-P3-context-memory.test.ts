@@ -85,9 +85,9 @@ describe('P3 Reader Context & Memory C01–C14',()=>{
     await confirmReaderFactV1(scope,await fact(scope,a,at,'on'))
     await confirmReaderFactV1(scope,await fact(scope,b,bt,'off'))
     const aPacket=await context(scope,a),bPacket=await context(scope,b)
-    expect(valuesOf(aPacket,'reader.confirmed-facts')).toContain('"on"')
-    expect(valuesOf(aPacket,'reader.confirmed-facts')).not.toContain('"off"')
-    expect(valuesOf(bPacket,'reader.confirmed-facts')).toContain('"off"')
+    expect(JSON.parse(JSON.parse(valuesOf(aPacket,'reader.confirmed-facts')).facts[0].valueJson)).toBe('on')
+    expect(JSON.parse(valuesOf(aPacket,'reader.confirmed-facts')).facts).toHaveLength(1)
+    expect(JSON.parse(JSON.parse(valuesOf(bPacket,'reader.confirmed-facts')).facts[0].valueJson)).toBe('off')
     expect(aPacket.scope.lineageFingerprint).not.toBe(bPacket.scope.lineageFingerprint)
   })
   it('C03: candidate/retracted facts and knowledge never appear; confirmed quote proof required',async()=>{
@@ -114,7 +114,7 @@ describe('P3 Reader Context & Memory C01–C14',()=>{
     await confirmReaderFactV1(scope,await fact(scope,sid,t,'on'))
     await expect(confirmReaderFactV1(scope,await fact(scope,sid,t,'off'))).rejects.toThrow(/overrides/)
     const packet=await context(scope,sid)
-    expect(valuesOf(packet,'reader.confirmed-facts')).toContain('"on"')
+    expect(JSON.parse(JSON.parse(valuesOf(packet,'reader.confirmed-facts')).facts[0].valueJson)).toBe('on')
   })
   it('C05: missing or tampered pinned baseline rejects before any assembled packet',async()=>{
     const scope=await workspace(),sid=await root(scope)
