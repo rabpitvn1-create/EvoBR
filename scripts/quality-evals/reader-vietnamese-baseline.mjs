@@ -105,7 +105,7 @@ function validateEnvironment() {
 
 async function startVite(port) {
   const child = spawn(process.execPath, ['node_modules/vite/bin/vite.js',
-    '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
+    '--host', '127.0.0.1', '--port', String(port), '--strictPort', '--base', '/'], {
     cwd: process.cwd(),
     stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, BROWSER: 'none' },
@@ -118,7 +118,7 @@ async function startVite(port) {
   for (let attempt = 0; attempt < 100; attempt++) {
     if (child.exitCode !== null) throw Error('Vite failed to start: ' + output)
     try {
-      const response = await fetch(origin + '/__vite_ping', { signal: AbortSignal.timeout(1500) })
+      const response = await fetch(origin + '/', { signal: AbortSignal.timeout(1500) })
       if (response.ok) return { child, origin }
     } catch { /* server not ready */ }
     await sleep(150)
@@ -283,7 +283,7 @@ async function main() {
     browser = await chromium.launch({ headless: true })
     const context = await browser.newContext({ serviceWorkers: 'block' })
     const page = await context.newPage()
-    await page.goto(vite.origin + '/__vite_ping', { waitUntil: 'domcontentloaded' })
+    await page.goto(vite.origin + '/', { waitUntil: 'domcontentloaded' })
     if (config.codexLogin) await assertCodexReady(page, config.model)
     const requestConfig = {
       provider: config.provider, model: config.model, baseUrl: config.baseUrl,
