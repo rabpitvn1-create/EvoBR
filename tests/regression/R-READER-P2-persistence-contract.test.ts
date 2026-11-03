@@ -141,11 +141,9 @@ describe('P2 persistent reader contract D01–D06/D08–D09', () => {
     const backup = await deriveExportProjectJSON(scope.projectId)
     const portableSessions = (backup as any).readerSessions as Array<Record<string, any>>
     const portableTurns = (backup as any).readerTurns as Array<Record<string, any>>
-    const firstExportSession = portableSessions.find(r => r.headTurnId == null &&
-      r._headTurnExportId != null && r._headTurnExportId !== undefined &&
-      r._exportId === portableTurns.find(t => t._parentExportId == null && t._sessionExportId === r._exportId)?._sessionExportId)
-    const firstSession = firstExportSession ?? portableSessions[0]
-    const otherSession = portableSessions.find(s => s._exportId !== firstSession._exportId)!
+    expect(portableSessions).toHaveLength(2)
+    const firstSession = portableSessions[0]
+    const otherSession = portableSessions[1]
     const firstChild = portableTurns.find(t => t._sessionExportId === firstSession._exportId && t._parentExportId != null)!
     const otherRoot = portableTurns.find(t => t._sessionExportId === otherSession._exportId && t._parentExportId == null)!
     firstChild._parentExportId = otherRoot._exportId
