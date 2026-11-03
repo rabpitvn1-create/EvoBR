@@ -1,6 +1,7 @@
 /** P4 choices are generated strictly after the V3-approved prose is frozen. */
 import type { ChatMessage } from '../types'
 import { wholeJSONContainerTextV1 } from '../ai/whole-json-container'
+import { normalizeReaderSceneHintsV1, type ReaderSceneHintsV1 } from './stage-assets'
 import type { AIRequestConfigResolution } from '../ai/client'
 import { hashCanonicalValue, canonicalStringify } from '../agent/run/hash'
 import { recordAgentRunArtifactV1 } from '../memory/artifact-store'
@@ -44,6 +45,7 @@ export interface ReaderChoicesReceiptV1{
   generationResponseHashes:string[]
   verifierResponseHash:string|null
   fallbackContinue:boolean
+  sceneHints:ReaderSceneHintsV1|null
   choiceEvidenceHash:string
 }
 function fail(message:string):never{throw Error('[readerChoices] '+message)}
@@ -196,6 +198,7 @@ export async function runReaderChoiceStageV1(input:{
     fail('choice retry limit must be 0..2')
   const responseHashes:string[]=[]
   let branches:ReaderBranchChoiceV1[]=[]
+  let sceneHints:ReaderSceneHintsV1|null=null
   let attempts=0
   for(let index=0;index<=maxRetries;index++){
     if(handle.calls>=READER_MODEL_CALL_LIMIT_V1)break
@@ -228,6 +231,10 @@ export async function runReaderChoiceStageV1(input:{
     let parsed:{choices:ReaderBranchChoiceV1[];rejected:number}
     try{parsed=parseReaderBranchChoicesV1(response.text,finalProse)}
     catch{parsed={choices:[],rejected:1}}
+    // A valid choices envelope may carry a visual hint even when it has no
+    // surviving branches; Continue remains a deterministic choice.
+    try{sceneHints=normalizeReaderSceneHintsV1(parseJson(response.text).sceneHints)}
+    catch{sceneHints=null}
     if(!parsed.choices.length){
       // Preserve a real response and deterministic rejection as explicit
       // evidence. A retry is possible only if one model call remains reserved
@@ -290,7 +297,7 @@ export async function runReaderChoiceStageV1(input:{
     finalProseHash:input.finalProseHash,
     choices:branches,issues,generationAttempts:attempts,
     generationResponseHashes:responseHashes,
-    verifierResponseHash,fallbackContinue,
+    verifierResponseHash,fallbackContinue,sceneHints,
   }
   const receipt:ReaderChoicesReceiptV1={...body,choiceEvidenceHash:await hashCanonicalValue(body)}
   await recordAgentRunArtifactV1({scope:handle.scope,runId:handle.snapshot.run.id,

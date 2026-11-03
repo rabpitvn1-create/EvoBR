@@ -72,6 +72,42 @@ describe('P5 Reader publication gate P01-P13',()=>{
       kind:'opening',sessionId:sid,requestKey:'open',expectedRevision:9,
     }})).rejects.toThrow(/fingerprint/)
   })
+  it('P6: optional signed scene hints persist in the same committed reader turn',async()=>{
+    const {scope,sid}=await setup()
+    const output=JSON.stringify({choices:[{choiceKey:'look-door',
+      text:'Quan sát cánh cửa khép hờ',sourceQuote:quote}],
+      sceneHints:{levelId:'level-0',entityIds:['brownie']}})
+    fakeProvider(output)
+    const published=await publishReaderTurnV1(request(scope,opening(sid)))
+    const stored=await db.readerTurns.get(published.receipt.resultTurnId)
+    expect(stored?.sceneHintsJson).toBe('{"levelId":"level-0","entityIds":["brownie"]}')
+    expect(published.turn.sceneHintsJson).toBe(stored?.sceneHintsJson)
+    expect(await db.readerPublicationRuns.count()).toBe(1)
+  })
+  it('P6: missing optional scene hints are stored as null',async()=>{
+    const {scope,sid}=await setup();fakeProvider()
+    const published=await publishReaderTurnV1(request(scope,opening(sid)))
+    expect((await db.readerTurns.get(published.receipt.resultTurnId))?.sceneHintsJson)
+      .toBeNull()
+    expect(await db.readerPublicationRuns.count()).toBe(1)
+  })
+  it('P6: malformed optional scene hints fall back to null without blocking publication',async()=>{
+    const invalid=[42,{'levelId':'unknown','entityIds':['brownie']},
+      {'levelId':'level-0','entityIds':'brownie'},
+      {'levelId':'level-0','entityIds':[{'id':'brownie'}]}]
+    for(const [index,sceneHints] of invalid.entries()){
+      const {scope,sid}=await setup()
+      fakeProvider(JSON.stringify({choices:[{choiceKey:'look-door',
+        text:'Quan sát cánh cửa khép hờ',sourceQuote:quote}],sceneHints}))
+      const published=await publishReaderTurnV1(request(scope,opening(sid,'invalid-'+index)))
+      expect(published.turn.sceneHintsJson).toBeNull()
+      expect((await db.readerTurns.get(published.receipt.resultTurnId))?.sceneHintsJson)
+        .toBeNull()
+      expect((await db.readerSessions.get(sid))?.revision).toBe(1)
+      // Each iteration is a separate signed turn, never a partial candidate.
+      await db.delete();await db.open()
+    }
+  })
   it('P02: deterministic Continue has numeric choice ID and ordinary decision path',async()=>{
     const {scope,sid}=await setup();fakeProvider(empty)
     const first=await publishReaderTurnV1(request(scope,opening(sid)))
