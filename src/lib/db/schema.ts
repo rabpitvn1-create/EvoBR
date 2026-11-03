@@ -202,6 +202,19 @@ constructor(databaseName = STORYFORGE_DATABASE_NAME) {
   super(databaseName)
   this.version(13).stores(STORYFORGE_STORES_V13)
   this.version(STORYFORGE_SCHEMA_VERSION).stores(STORYFORGE_STORES)
+  // Published Reader artifacts have insert-only semantics. A malformed retry,
+  // direct editor action, bulkPut or accidental adoption update must not
+  // rewrite a previously committed narrative or its publication evidence.
+  // Rows may still be removed by the explicit project-deletion lifecycle;
+  // individual sessions are retired via archiveReaderSessionV1.
+  for (const table of [
+    this.readerTurns, this.readerChoices, this.readerDecisions,
+    this.readerPublicationRuns,
+  ]) {
+    table.hook('updating', () => {
+      throw new Error('[reader] published Reader records are immutable')
+    })
+  }
 }
 }
 export const db = new StoryForgeDB()
