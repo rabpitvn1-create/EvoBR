@@ -941,6 +941,10 @@
       "parent": "src/styles/themes.css",
       "dependencies": []
     },
+    "src/components/agent/agent-workspace.css": {
+      "parent": "src/components/agent/ChatCopilotPanel.tsx",
+      "dependencies": []
+    },
     "src/components/agent/CandidateDraftEditor.tsx": {
       "parent": "src/components/agent/ChatCopilotPanel.tsx",
       "dependencies": [
@@ -1131,10 +1135,6 @@
           "kind": "module"
         }
       ]
-    },
-    "src/components/agent/agent-workspace.css": {
-      "parent": "src/components/agent/ChatCopilotPanel.tsx",
-      "dependencies": []
     },
     "src/components/agent/useCompanionVoice.ts": {
       "parent": "src/components/agent/ChatCopilotPanel.tsx",
@@ -3771,6 +3771,15 @@
         }
       ]
     },
+    "src/components/longform/longform.css": {
+      "parent": "src/components/longform/LongformLayout.tsx",
+      "dependencies": [
+        {
+          "path": "src/styles/workspace-layout.css",
+          "kind": "css-or-asset"
+        }
+      ]
+    },
     "src/components/longform/LongformAgentProgress.tsx": {
       "parent": "src/components/agent/ChatCopilotPanel.tsx",
       "dependencies": [
@@ -3871,15 +3880,6 @@
         }
       ]
     },
-    "src/components/longform/longform.css": {
-      "parent": "src/components/longform/LongformLayout.tsx",
-      "dependencies": [
-        {
-          "path": "src/styles/workspace-layout.css",
-          "kind": "css-or-asset"
-        }
-      ]
-    },
     "src/components/longform/navigation.ts": {
       "parent": "src/pages/LongformLibraryPage.tsx",
       "dependencies": [
@@ -3891,6 +3891,10 @@
     },
     "src/components/navigation/product-navigation.ts": {
       "parent": "src/components/longform/LongformLayout.tsx",
+      "dependencies": []
+    },
+    "src/components/node-authoring/node-authoring.css": {
+      "parent": "src/components/node-authoring/NodeAuthoringWorkspace.tsx",
       "dependencies": []
     },
     "src/components/node-authoring/NodeAuthoringWorkspace.tsx": {
@@ -4097,8 +4101,8 @@
         }
       ]
     },
-    "src/components/node-authoring/node-authoring.css": {
-      "parent": "src/components/node-authoring/NodeAuthoringWorkspace.tsx",
+    "src/components/outline/chapter-drag.ts": {
+      "parent": "src/components/outline/OutlineVolumeDetail.tsx",
       "dependencies": []
     },
     "src/components/outline/ChapterOutlineWorkshop.tsx": {
@@ -4958,10 +4962,6 @@
         }
       ]
     },
-    "src/components/outline/chapter-drag.ts": {
-      "parent": "src/components/outline/OutlineVolumeDetail.tsx",
-      "dependencies": []
-    },
     "src/components/outline/useChunkedGeneration.ts": {
       "parent": "src/components/outline/OutlinePanel.tsx",
       "dependencies": [
@@ -5378,6 +5378,15 @@
         }
       ]
     },
+    "src/components/project/reference-view.ts": {
+      "parent": "src/components/project/ReferencePanel.tsx",
+      "dependencies": [
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        }
+      ]
+    },
     "src/components/project/ReferenceDeepAnalysisTab.tsx": {
       "parent": "src/components/project/ReferenceDetailCard.tsx",
       "dependencies": [
@@ -5454,15 +5463,6 @@
         {
           "path": "src/stores/reference.ts",
           "kind": "module"
-        }
-      ]
-    },
-    "src/components/project/reference-view.ts": {
-      "parent": "src/components/project/ReferencePanel.tsx",
-      "dependencies": [
-        {
-          "path": "src/lib/types/index.ts",
-          "kind": "type"
         }
       ]
     },
@@ -5935,57 +5935,6 @@
         }
       ]
     },
-    "src/components/settings/SettingsPage.tsx": {
-      "parent": "src/App.tsx",
-      "dependencies": [
-        {
-          "path": "src/components/settings/AIConfigPanel.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/settings/ProjectStorageWorkspacePanel.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/types/index.ts",
-          "kind": "type"
-        }
-      ]
-    },
-    "src/components/settings/ThemeSelector.tsx": {
-      "parent": "src/components/settings/AIConfigPanel.tsx",
-      "dependencies": [
-        {
-          "path": "src/components/settings/theme-selector.css",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/theme.ts",
-          "kind": "module"
-        }
-      ]
-    },
-    "src/components/settings/UsageStatsPage.tsx": {
-      "parent": "src/pages/WorkspacePage.tsx",
-      "dependencies": [
-        {
-          "path": "src/components/shared/Dialog.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/ai/usage-log.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/types/index.ts",
-          "kind": "type"
-        },
-        {
-          "path": "src/stores/ai-usage.ts",
-          "kind": "module"
-        }
-      ]
-    },
     "src/components/settings/prompt/PromptExamplesEditor.tsx": {
       "parent": "src/components/settings/prompt/PromptTemplateEditor.tsx",
       "dependencies": [
@@ -6157,6 +6106,23 @@
         {
           "path": "src/stores/world-group.ts",
           "kind": "module"
+        }
+      ]
+    },
+    "src/components/settings/prompt/workflow-helpers.ts": {
+      "parent": "src/components/settings/prompt/WorkflowEditor.tsx",
+      "dependencies": [
+        {
+          "path": "src/lib/types/workflow.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/workflow/graph.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/workflow/graph.ts",
+          "kind": "type"
         }
       ]
     },
@@ -6333,19 +6299,19 @@
         }
       ]
     },
-    "src/components/settings/prompt/workflow-helpers.ts": {
-      "parent": "src/components/settings/prompt/WorkflowEditor.tsx",
+    "src/components/settings/SettingsPage.tsx": {
+      "parent": "src/App.tsx",
       "dependencies": [
         {
-          "path": "src/lib/types/workflow.ts",
-          "kind": "type"
-        },
-        {
-          "path": "src/lib/workflow/graph.ts",
+          "path": "src/components/settings/AIConfigPanel.tsx",
           "kind": "module"
         },
         {
-          "path": "src/lib/workflow/graph.ts",
+          "path": "src/components/settings/ProjectStorageWorkspacePanel.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/index.ts",
           "kind": "type"
         }
       ]
@@ -6353,6 +6319,61 @@
     "src/components/settings/theme-selector.css": {
       "parent": "src/components/settings/ThemeSelector.tsx",
       "dependencies": []
+    },
+    "src/components/settings/ThemeSelector.tsx": {
+      "parent": "src/components/settings/AIConfigPanel.tsx",
+      "dependencies": [
+        {
+          "path": "src/components/settings/theme-selector.css",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/theme.ts",
+          "kind": "module"
+        }
+      ]
+    },
+    "src/components/settings/UsageStatsPage.tsx": {
+      "parent": "src/pages/WorkspacePage.tsx",
+      "dependencies": [
+        {
+          "path": "src/components/shared/Dialog.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/usage-log.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/stores/ai-usage.ts",
+          "kind": "module"
+        }
+      ]
+    },
+    "src/components/shared/AcknowledgedTextField.tsx": {
+      "parent": "src/components/outline/StoryArcPanel.tsx",
+      "dependencies": [
+        {
+          "path": "src/components/shared/AutoResizeTextarea.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/shared/CompositionInput.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/hooks/useBeforeUnload.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/authoring/pending-edit-coordinator.ts",
+          "kind": "module"
+        }
+      ]
     },
     "src/components/shared/AIFieldModeTabs.tsx": {
       "parent": "src/components/worldview/StoryCorePanel.tsx",
@@ -6384,27 +6405,6 @@
         },
         {
           "path": "src/stores/prompt.ts",
-          "kind": "module"
-        }
-      ]
-    },
-    "src/components/shared/AcknowledgedTextField.tsx": {
-      "parent": "src/components/outline/StoryArcPanel.tsx",
-      "dependencies": [
-        {
-          "path": "src/components/shared/AutoResizeTextarea.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/shared/CompositionInput.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/hooks/useBeforeUnload.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/authoring/pending-edit-coordinator.ts",
           "kind": "module"
         }
       ]
@@ -6494,6 +6494,10 @@
           "kind": "module"
         }
       ]
+    },
+    "src/components/shared/initial-record-target.ts": {
+      "parent": "src/components/character/CharacterPanel.tsx",
+      "dependencies": []
     },
     "src/components/shared/InlineEdit.tsx": {
       "parent": "src/components/worldview/StoryCorePanel.tsx",
@@ -6600,16 +6604,12 @@
         }
       ]
     },
-    "src/components/shared/Toast.tsx": {
-      "parent": "src/main.tsx",
-      "dependencies": []
-    },
-    "src/components/shared/initial-record-target.ts": {
-      "parent": "src/components/character/CharacterPanel.tsx",
-      "dependencies": []
-    },
     "src/components/shared/textarea-scroll.ts": {
       "parent": "src/components/shared/CompositionInput.tsx",
+      "dependencies": []
+    },
+    "src/components/shared/Toast.tsx": {
+      "parent": "src/main.tsx",
       "dependencies": []
     },
     "src/components/showcase/ShowcaseNotice.tsx": {
@@ -6824,116 +6824,6 @@
         }
       ]
     },
-    "src/components/system/ImportDocPanel.tsx": {
-      "parent": "src/pages/WorkspacePage.tsx",
-      "dependencies": [
-        {
-          "path": "src/components/layout/sidebar-tree.ts",
-          "kind": "type"
-        },
-        {
-          "path": "src/components/shared/Dialog.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/shared/Toast.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/CodexImportReviewModal.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/ImportConfirmModal.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/ImportDocOverview.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/ImportReportModal.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/ImportRuntimeView.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/ImportUnfinishedBanner.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/ImportUploadZone.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/useImportDocumentPreparation.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/system/import/useImportSessionRecovery.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/import/chunker.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/import/codex-classification.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/import/pipeline.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/types/import-session.ts",
-          "kind": "type"
-        },
-        {
-          "path": "src/lib/types/index.ts",
-          "kind": "type"
-        },
-        {
-          "path": "src/stores/import-session.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/stores/import-status.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/stores/outline.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/stores/world-group.ts",
-          "kind": "module"
-        }
-      ]
-    },
-    "src/components/system/VersionHistoryPanel.tsx": {
-      "parent": "src/pages/WorkspacePage.tsx",
-      "dependencies": [
-        {
-          "path": "src/components/shared/Dialog.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/components/shared/Toast.tsx",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/types/index.ts",
-          "kind": "type"
-        },
-        {
-          "path": "src/stores/backup.ts",
-          "kind": "module"
-        }
-      ]
-    },
     "src/components/system/import/CodexImportReviewModal.tsx": {
       "parent": "src/components/system/ImportDocPanel.tsx",
       "dependencies": [
@@ -7106,6 +6996,116 @@
         },
         {
           "path": "src/stores/import-session.ts",
+          "kind": "module"
+        }
+      ]
+    },
+    "src/components/system/ImportDocPanel.tsx": {
+      "parent": "src/pages/WorkspacePage.tsx",
+      "dependencies": [
+        {
+          "path": "src/components/layout/sidebar-tree.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/components/shared/Dialog.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/shared/Toast.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/CodexImportReviewModal.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/ImportConfirmModal.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/ImportDocOverview.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/ImportReportModal.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/ImportRuntimeView.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/ImportUnfinishedBanner.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/ImportUploadZone.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/useImportDocumentPreparation.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/system/import/useImportSessionRecovery.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/import/chunker.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/import/codex-classification.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/import/pipeline.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/import-session.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/stores/import-session.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/stores/import-status.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/stores/outline.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/stores/world-group.ts",
+          "kind": "module"
+        }
+      ]
+    },
+    "src/components/system/VersionHistoryPanel.tsx": {
+      "parent": "src/pages/WorkspacePage.tsx",
+      "dependencies": [
+        {
+          "path": "src/components/shared/Dialog.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/components/shared/Toast.tsx",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/stores/backup.ts",
           "kind": "module"
         }
       ]
@@ -7842,6 +7842,19 @@
         }
       ]
     },
+    "src/hooks/useActiveWork.ts": {
+      "parent": "src/pages/WorkspacePage.tsx",
+      "dependencies": [
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/index.ts",
+          "kind": "type"
+        }
+      ]
+    },
     "src/hooks/useAIStream.ts": {
       "parent": "src/components/outline/OutlinePanel.tsx",
       "dependencies": [
@@ -7872,19 +7885,6 @@
         {
           "path": "src/stores/ai-generation-session.ts",
           "kind": "module"
-        }
-      ]
-    },
-    "src/hooks/useActiveWork.ts": {
-      "parent": "src/pages/WorkspacePage.tsx",
-      "dependencies": [
-        {
-          "path": "src/lib/db/schema.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/types/index.ts",
-          "kind": "type"
         }
       ]
     },
@@ -20339,6 +20339,10 @@
           "kind": "module"
         },
         {
+          "path": "src/lib/reader/stage-assets.ts",
+          "kind": "module"
+        },
+        {
           "path": "src/lib/types/index.ts",
           "kind": "type"
         }
@@ -20366,6 +20370,10 @@
         {
           "path": "src/lib/reader/publication.ts",
           "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/stage-assets.ts",
+          "kind": "module"
         },
         {
           "path": "src/lib/registry/adopt.ts",
@@ -24289,6 +24297,10 @@
         }
       ]
     },
+    "src/pages/reader.css": {
+      "parent": "src/pages/ReaderPage.tsx",
+      "dependencies": []
+    },
     "src/pages/ReaderPage.tsx": {
       "parent": "src/App.tsx",
       "dependencies": [
@@ -24650,10 +24662,6 @@
           "kind": "module"
         }
       ]
-    },
-    "src/pages/reader.css": {
-      "parent": "src/pages/ReaderPage.tsx",
-      "dependencies": []
     },
     "src/stores/_factories.ts": {
       "parent": "src/stores/project-singletons.ts",
