@@ -83,14 +83,18 @@ function instructions(turn, previous) {
 function validateEnvironment() {
   const provider = process.env.EVO_P1_PROVIDER
   const model = process.env.EVO_P1_MODEL
-  const baseUrl = process.env.EVO_P1_BASE_URL
+  const codexLogin = provider === 'codex' && process.env.EVO_P1_ALLOW_CODEX_LOGIN === '1'
+  const baseUrl = process.env.EVO_P1_BASE_URL || (codexLogin ? 'http://127.0.0.1' : undefined)
   const apiKey = process.env.EVO_P1_API_KEY || ''
   if (!provider || !model || !baseUrl) {
-    throw Error('REAL_PROVIDER_UNAVAILABLE: EVO_P1_PROVIDER, EVO_P1_MODEL and EVO_P1_BASE_URL are required. No mock fallback.')
+    throw Error('REAL_PROVIDER_UNAVAILABLE: EVO_P1_PROVIDER, EVO_P1_MODEL and EVO_P1_BASE_URL are required (except opt-in local Codex login). No mock fallback.')
   }
   if (!/^https?:\/\/[^\s]+$/i.test(baseUrl)) throw Error('Invalid EVO_P1_BASE_URL')
-  if (!apiKey && !(provider === 'ollama' && process.env.EVO_P1_ALLOW_EMPTY_KEY === '1')) {
-    throw Error('REAL_PROVIDER_UNAVAILABLE: EVO_P1_API_KEY missing. No mock fallback.')
+  if (!apiKey && !(provider === 'ollama' && process.env.EVO_P1_ALLOW_EMPTY_KEY === '1') && !codexLogin) {
+    throw Error('REAL_PROVIDER_UNAVAILABLE: EVO_P1_API_KEY missing. Codex requires explicit EVO_P1_ALLOW_CODEX_LOGIN=1. No mock fallback.')
+  }
+  if (provider === 'codex' && !codexLogin) {
+    throw Error('CODEX_LOGIN_OPT_IN_REQUIRED: Set EVO_P1_ALLOW_CODEX_LOGIN=1 to authorize the local authenticated CLI route.')
   }
   const priceIn = numberEnv('EVO_P1_INPUT_USD_PER_M', null)
   const priceOut = numberEnv('EVO_P1_OUTPUT_USD_PER_M', null)
@@ -98,7 +102,7 @@ function validateEnvironment() {
     throw Error('Provide both EVO_P1_INPUT_USD_PER_M and EVO_P1_OUTPUT_USD_PER_M, or neither.')
   }
   return {
-    provider, model, baseUrl, apiKey,
+    provider, model, baseUrl, apiKey, codexLogin,
     temperature: numberEnv('EVO_P1_TEMPERATURE', 0.8),
     maxTokens: integerEnv('EVO_P1_MAX_TOKENS', 1400, 1),
     contextWindow: integerEnv('EVO_P1_CONTEXT_WINDOW', 65536, 1024),
@@ -130,6 +134,20 @@ async function startVite(port) {
   }
   child.kill()
   throw Error('Vite did not become ready: ' + output)
+}
+
+async function assertCodexReady(page, model) {
+  const result = await page.evaluate(async model => {
+    const transport = await import('/src/lib/ai/codex-transport.ts')
+    const status = await transport.codexRequest('/status')
+    if (status.state !== 'ready') return { state: status.state || 'unavailable' }
+    const models = await transport.codexRequest('/models')
+    return { state: 'ready', modelAllowed: Array.isArray(models.models) && models.models.some(item => item.id === model) }
+  }, model)
+  if (result.state !== 'ready' || !result.modelAllowed) {
+    throw Error('REAL_CODEX_UNAVAILABLE: CLI login is not ready or requested model is not in authenticated bridge model catalog.')
+  }
+  return { state: 'ready', modelVerified: true }
 }
 
 async function realClientCall(page, input, config) {
@@ -220,7 +238,8 @@ function summarize(turns, config) {
 async function main() {
   if (process.argv.includes('--help')) {
     process.stdout.write('P1: node scripts/quality-evals/reader-vietnamese-baseline.mjs [OUTPUT_DIR]\n' +
-      'Required environment: EVO_P1_PROVIDER, EVO_P1_MODEL, EVO_P1_BASE_URL, EVO_P1_API_KEY\n' +
+      'Required: EVO_P1_PROVIDER, EVO_P1_MODEL. OpenAI-compatible route also requires EVO_P1_BASE_URL, EVO_P1_API_KEY.\n' +
+      'Codex login route: EVO_P1_PROVIDER=codex, EVO_P1_ALLOW_CODEX_LOGIN=1 (no external API key); authenticated Codex CLI and approved model required.\n' +
       'Optional: EVO_P1_INPUT_USD_PER_M, EVO_P1_OUTPUT_USD_PER_M, EVO_P1_MAX_RETRIES (default 0).\n' +
       'Requires Node 24, npm ci and Playwright Chromium. Always uses real src/lib/ai/client.ts.\n')
     return
@@ -237,7 +256,8 @@ async function main() {
   const previous = []
   const safeConfig = {
     provider: config.provider, model: config.model,
-    baseUrlHash: sha256(config.baseUrl), temperature: config.temperature,
+    baseUrlHash: config.codexLogin ? null : sha256(config.baseUrl),
+    localCodexBridge: config.codexLogin, temperature: config.temperature,
     maxTokens: config.maxTokens, contextWindow: config.contextWindow,
     inputPriceUSDPerMillion: config.priceIn,
     outputPriceUSDPerMillion: config.priceOut,
@@ -265,6 +285,7 @@ async function main() {
     const context = await browser.newContext({ serviceWorkers: 'block' })
     const page = await context.newPage()
     await page.goto(vite.origin + '/__vite_ping', { waitUntil: 'domcontentloaded' })
+    if (config.codexLogin) await assertCodexReady(page, config.model)
     const requestConfig = {
       provider: config.provider, model: config.model, baseUrl: config.baseUrl,
       apiKey: config.apiKey, temperature: config.temperature,
