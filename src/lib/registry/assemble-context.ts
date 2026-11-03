@@ -14,6 +14,16 @@ import { sha256Text } from '../ai/chapter-memory/text-normalization'
 import { db } from '../db/schema'
 import { assertRecordInScope, resolveReadScope } from '../workspace/scope'
 import { maybeInjectHarnessFaultV1 } from '../agent/dev-fault-injection'
+import { assertReaderAssemblyBoundaryV1 } from '../reader/gateway-sources'
+
+// P3 reader adapter is a governed specialization of this same Gateway.
+// It never falls back to implicit Work source selection.
+export {
+  prepareReaderContextV1, assertReaderContextCurrentV1,
+  readerContextCacheKeyV1, invalidateReaderContextAfterImportOrRefreshV1,
+  beginReaderMemorySagaV1, settleReaderMemoryTaskV1,
+  retryReaderMemoryTaskV1, inspectReaderMemorySagaV1,
+} from '../reader/context'
 
 // CTXG contracts share the existing assembleContext/CONTEXT_SOURCES boundary.
 // Re-exporting keeps callers away from a parallel context entrypoint.
@@ -136,6 +146,7 @@ function deriveInputBudget(input: AssembleContextInput): number {
 
 export async function assembleContext(input: AssembleContextInput): Promise<AssembleContextResult> {
   maybeInjectHarnessFaultV1('context.before-assemble')
+  await assertReaderAssemblyBoundaryV1(input)
   const scope = await resolveReadScope(input)
   const resolvedBase: AssembleContextInput = { ...input, projectId: scope.projectId, scope }
   const selected = selectSources(resolvedBase)
@@ -361,7 +372,9 @@ async function assertContextAnchors(input: AssembleContextInput, selected: Conte
 }
 
 function selectSources(input: AssembleContextInput): ContextSource[] {
-  if (!input.sourceKeys?.length) return CONTEXT_SOURCES
+  // Reader sources are opt-in only. Default authoring assembly must retain
+  // its pre-P3 source set and never attempt an unauthorized Reader read.
+  if (!input.sourceKeys?.length) return CONTEXT_SOURCES.filter(source => !source.key.startsWith('reader.'))
   return input.sourceKeys
     .map(key => CONTEXT_SOURCE_BY_KEY.get(key))
     .filter((source): source is ContextSource => !!source)

@@ -641,7 +641,12 @@
     "src/lib/prose/scene-craft.ts",
     "src/lib/prose/system-fiction-contract.ts",
     "src/lib/reader/baseline.ts",
+    "src/lib/reader/confirmation.ts",
+    "src/lib/reader/context.ts",
+    "src/lib/reader/gateway-sources.ts",
     "src/lib/reader/import-integrity.ts",
+    "src/lib/reader/lineage.ts",
+    "src/lib/reader/memory-saga.ts",
     "src/lib/reference-analysis/derived-agent-baseline.ts",
     "src/lib/reference-analysis/derived-agent-plan.ts",
     "src/lib/reference-analysis/lifecycle.ts",
@@ -20255,6 +20260,101 @@
         }
       ]
     },
+    "src/lib/reader/confirmation.ts": {
+      "parent": "src/lib/reader/context.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/lineage.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/world-ownership.ts",
+          "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/context.ts": {
+      "parent": "src/lib/registry/assemble-context.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/chapter-memory/text-normalization.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/context-budget.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/context-gateway/provider-cache.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/confirmation.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/gateway-sources.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/lineage.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/memory-saga.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/registry/assemble-context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/registry/types.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/world-ownership.ts",
+          "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/gateway-sources.ts": {
+      "parent": "src/lib/registry/context-sources.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/chapter-memory/text-normalization.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/registry/types.ts",
+          "kind": "type"
+        }
+      ]
+    },
     "src/lib/reader/import-integrity.ts": {
       "parent": "src/lib/export/registry-import.ts",
       "dependencies": [
@@ -20265,6 +20365,72 @@
         {
           "path": "src/lib/reader/baseline.ts",
           "kind": "module"
+        }
+      ]
+    },
+    "src/lib/reader/lineage.ts": {
+      "parent": "src/lib/reader/context.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/chapter-memory/text-normalization.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/baseline.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/gateway-sources.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/registry/types.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/world-ownership.ts",
+          "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/memory-saga.ts": {
+      "parent": "src/lib/reader/context.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/ai/chapter-memory/text-normalization.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/lineage.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/world-ownership.ts",
+          "kind": "type"
         }
       ]
     },
@@ -20483,6 +20649,14 @@
           "kind": "module"
         },
         {
+          "path": "src/lib/reader/context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/gateway-sources.ts",
+          "kind": "module"
+        },
+        {
           "path": "src/lib/registry/context-sources.ts",
           "kind": "module"
         },
@@ -20650,6 +20824,10 @@
         },
         {
           "path": "src/lib/outline/canonical-outline-walk.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/gateway-sources.ts",
           "kind": "module"
         },
         {
