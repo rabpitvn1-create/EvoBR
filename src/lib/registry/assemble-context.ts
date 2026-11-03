@@ -27,7 +27,14 @@ export {
 
 // The P4 Reader candidate entry shares this governed Gateway boundary.
 // Exporting it does not activate generation in the chapter editor.
-export { generateReaderTurnCandidateV1, verifyReaderGenerationCandidateV1 } from '../reader/generation'
+export async function generateReaderTurnCandidateV1(input: Parameters<typeof import('../reader/generation').generateReaderTurnCandidateV1>[0]) {
+  const adapter = await import('../reader/generation')
+  return adapter.generateReaderTurnCandidateV1(input)
+}
+export async function verifyReaderGenerationCandidateV1(input: Parameters<typeof import('../reader/generation').verifyReaderGenerationCandidateV1>[0]) {
+  const adapter = await import('../reader/generation')
+  return adapter.verifyReaderGenerationCandidateV1(input)
+}
 
 // CTXG contracts share the existing assembleContext/CONTEXT_SOURCES boundary.
 // Re-exporting keeps callers away from a parallel context entrypoint.
