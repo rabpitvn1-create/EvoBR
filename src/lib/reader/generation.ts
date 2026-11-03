@@ -164,7 +164,7 @@ export async function generateReaderTurnCandidateV1(input:{
       fail('choice evidence or frozen finalProseHash invalid')
     await assertReaderContextCurrentV1(input.workspace,frozen)
     const body={
-      version:READER_GENERATION_CANDIDATE_VERSION_V1,
+      version:READER_GENERATION_CANDIDATE_VERSION_V1 as const,
       runId:handle.snapshot.run.id,sessionId:frozen.scope.sessionId,
       expectedRevision:frozen.scope.expectedRevision,
       headTurnId:frozen.scope.headTurnId,
