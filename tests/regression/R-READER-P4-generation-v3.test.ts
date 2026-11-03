@@ -184,7 +184,8 @@ describe('P4 Reader V01-V13 governed generation',()=>{
     expect(parseReaderBranchChoicesV1(fenced(JSON.stringify({choices:[{
       choiceKey:'fake',text:'Mở hầm',sourceQuote:'trích dẫn giả mạo',
     }]})),prose).choices).toEqual([])
-    const badReview=review.replace(quote,'trích dẫn giả mạo')
+    const badReview=JSON.stringify({issues:[{...JSON.parse(review).issues[0],
+      evidence:{sourceKey:'finalProse',quote:'trích dẫn giả mạo'}}]})
     expect(()=>parseReaderChoiceReviewV1(fenced(badReview),handle,prose,[item])).toThrow(/verbatim/)
     const order=scripted({'reader-prose':[prose],
       'reader-v3-review':[fenced(pass)],
