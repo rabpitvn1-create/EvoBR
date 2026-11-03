@@ -20613,6 +20613,10 @@
         },
         {
           "path": "src/lib/reader/context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
           "kind": "type"
         },
         {
