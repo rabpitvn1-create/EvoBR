@@ -3,6 +3,16 @@
  * Each profile changes STYLE only; scenario, Canon, continuation and transport
  * rules remain identical. IDs are organizer metadata and never in blind packets.
  */
+export const BASELINE_SYSTEM_PROMPT_V1 = Object.freeze([
+  'Bạn là người viết tiểu thuyết kinh dị tâm lý bằng tiếng Việt tự nhiên.',
+  'Viết một đoạn văn xuôi hoàn chỉnh, có diễn tiến nhân quả và điểm neo cảm xúc.',
+  'Chỉ xuất văn xuôi, không tiêu đề, không Markdown, không phân tích hay lựa chọn.',
+  'Giữ nguyên dữ kiện của tất cả những lượt truyện trước.',
+  'Không thêm nhân vật có tên hoặc lore được xem là Canon khi chưa có dữ kiện.',
+  'Tránh lặp công thức văn, tránh kể lại nguyên văn đoạn vừa rồi.',
+  'Mỗi lượt khoảng 180–300 từ nếu khả thi; ưu tiên tính tự nhiên và continuity.',
+].join('\n'))
+
 export const VOICE_PROFILES_V1 = Object.freeze({
   cinematic_minimal: {
     version: 1,
@@ -54,4 +64,9 @@ export const TOURNAMENT_PROFILES_V1 = Object.freeze([
 export function getVoiceProfileV1(id) {
   if (!Object.hasOwn(VOICE_PROFILES_V1, id)) throw Error('Unregistered P1 voice profile: ' + id)
   return VOICE_PROFILES_V1[id]
+}
+
+export function buildVoiceSystemPromptV1(id) {
+  const profile = getVoiceProfileV1(id)
+  return BASELINE_SYSTEM_PROMPT_V1 + '\n\nCHỈ ĐẠO GIỌNG VĂN (không sửa Canon):\n' + profile.instruction
 }
