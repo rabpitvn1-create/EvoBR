@@ -1,0 +1,10 @@
+{
+  "_notice": "Ví dụ cấu hình, KHÔNG chứa API key thực. Nhập các giá trị này trong Cài đặt AI của ứng dụng; không nạp tệp này trực tiếp vào runtime.",
+  "provider": "custom",
+  "model": "MODEL_DO_PROVIDER_CUNG_CAP",
+  "baseUrl": "BASE_URL_OPENAI_COMPATIBLE_CUA_PROVIDER_HOAC_PROXY",
+  "apiKey": "",
+  "temperature": 0.8,
+  "maxTokens": 1400,
+  "contextWindow": 150000
+}
