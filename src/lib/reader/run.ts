@@ -187,6 +187,7 @@ export async function finishReaderModelStepV1(input:{
   output:string;startedAt:number
   inputTokens?:number|null;outputTokens?:number|null
   artifactHash?:string
+  complete?:boolean
 }):Promise<void>{
   const {handle,stepId,attempt}=input
   const record=handle.records.findLast(x=>x.stepId===stepId&&x.attempt===attempt)
@@ -206,7 +207,7 @@ export async function finishReaderModelStepV1(input:{
   record.outputTokens=input.outputTokens??null
   // Output may be semantic/verifier artifact hash, but must be bound to
   // the exact provider response already recorded above.
-  await runEvent(handle,'step.succeeded',{
+  if(input.complete!==false)await runEvent(handle,'step.succeeded',{
     stepId,attempt,outputHash:input.artifactHash??responseHash,
   })
 }
@@ -224,3 +225,10 @@ export async function failReaderModelStepV1(
   }
 }
 export function readerStageEntryV1(stepId:ReaderStepV1):string{return STEP_ENTRY[stepId]}
+
+export async function completeReaderModelStepV1(
+  handle:ReaderRunHandleV1,stepId:ReaderStepV1,attempt:number,artifactHash:string,
+):Promise<void>{
+  if(handle.snapshot.projection.steps[stepId]?.status!=='running')fail('reader step not running')
+  await runEvent(handle,'step.succeeded',{stepId,attempt,outputHash:artifactHash})
+}
