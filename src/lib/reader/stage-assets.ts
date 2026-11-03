@@ -28,10 +28,10 @@ export function parseReaderSceneHintsV1(raw:string|null):ReaderSceneHintsV1|null
     const obj:unknown=JSON.parse(raw)
     if(!obj||typeof obj!=='object'||Array.isArray(obj))return null
     const fields=obj as Record<string,unknown>
-    if(typeof fields.levelId!=='string'||!Object.hasOwn(READER_STAGE_ASSETS_V1.levels,fields.levelId))return null
+    if(typeof fields.levelId!=='string'||!Object.prototype.hasOwnProperty.call(READER_STAGE_ASSETS_V1.levels,fields.levelId))return null
     const ids=Array.isArray(fields.entityIds)?fields.entityIds:[]
     return {levelId:fields.levelId,entityIds:[...new Set(ids.filter(
-      (id):id is string=>typeof id==='string'&&Object.hasOwn(READER_STAGE_ASSETS_V1.entities,id)
+      (id):id is string=>typeof id==='string'&&Object.prototype.hasOwnProperty.call(READER_STAGE_ASSETS_V1.entities,id)
     ))].slice(0,3)}
   }catch{return null}
 }
