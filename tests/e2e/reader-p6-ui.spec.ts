@@ -19,7 +19,8 @@ function routeProvider(page:import('@playwright/test').Page){
     }else if(system.includes('Bạn tạo LỰA CHỌN ĐỌC TIẾP')){
       stage='reader-choices'
       output=JSON.stringify({choices:[{choiceKey:'open-door',text:'Quan sát cánh cửa',
-        sourceQuote:'cánh cửa'}]})
+        sourceQuote:'cánh cửa'}],
+        sceneHints:{levelId:'level-0',entityIds:['brownie']}})
     }else if(system.includes('bộ kiểm tra CHỈ-ĐỌC')){
       stage='reader-choice-verifier';output='{"issues":[]}'
     }else{
@@ -48,6 +49,12 @@ async function seedWorkspace(page:import('@playwright/test').Page){
   })
 }
 test('P6: session → opening → choice → next turn → reload → old-turn fork',async({page})=>{
+  // Assets are synthetic test responses; hints originate from the mocked
+  // provider's actual P4 choices response, not from hand-seeded Reader rows.
+  await page.route('**/reader-assets/**',route=>route.fulfill({
+    status:200,contentType:'image/svg+xml',
+    body:'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="120"><rect width="80" height="120" fill="#9a8f78"/></svg>',
+  }))
   await page.goto('./')
   const scope=await seedWorkspace(page)
   const calls=await routeProvider(page)
@@ -56,6 +63,14 @@ test('P6: session → opening → choice → next turn → reload → old-turn f
   await page.getByRole('button',{name:'+ Tạo mới'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(1,{timeout:45_000})
   await expect(page.getByText(story[0])).toBeVisible()
+  await expect(page.locator('.ebr-stage[data-ready="true"]')).toBeVisible()
+  await expect(page.locator('.ebr-stage-entity[data-entity="brownie"]')).toBeVisible()
+  const committedHints=await page.evaluate(async()=>{
+    const {db}=await import('/storyforge/src/lib/db/schema.ts')
+    const latest=await db.readerTurns.orderBy('id').last()
+    return latest?.sceneHintsJson
+  })
+  expect(committedHints).toBe('{"levelId":"level-0","entityIds":["brownie"]}')
   await expect(page.getByRole('button',{name:'Quan sát cánh cửa'})).toBeEnabled()
   await page.getByRole('button',{name:'Quan sát cánh cửa'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(2,{timeout:45_000})
