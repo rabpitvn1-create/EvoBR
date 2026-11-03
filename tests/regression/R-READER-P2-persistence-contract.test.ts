@@ -134,6 +134,28 @@ describe('P2 persistent reader contract D01–D06/D08–D09', () => {
     await expect(forkReaderSessionV1(other.scope, first.root, first.a)).rejects.toThrow(/foreign parent/)
   })
 
+  it('D02 negative import: a published turn cannot adopt a sibling session parent in the same Work', async () => {
+    const scope = await workspace()
+    const first = await rootWithHistory(scope)
+    const second = await rootWithHistory(scope)
+    const backup = await deriveExportProjectJSON(scope.projectId)
+    const portableSessions = (backup as any).readerSessions as Array<Record<string, any>>
+    const portableTurns = (backup as any).readerTurns as Array<Record<string, any>>
+    const firstExportSession = portableSessions.find(r => r.headTurnId == null &&
+      r._headTurnExportId != null && r._headTurnExportId !== undefined &&
+      r._exportId === portableTurns.find(t => t._parentExportId == null && t._sessionExportId === r._exportId)?._sessionExportId)
+    const firstSession = firstExportSession ?? portableSessions[0]
+    const otherSession = portableSessions.find(s => s._exportId !== firstSession._exportId)!
+    const firstChild = portableTurns.find(t => t._sessionExportId === firstSession._exportId && t._parentExportId != null)!
+    const otherRoot = portableTurns.find(t => t._sessionExportId === otherSession._exportId && t._parentExportId == null)!
+    firstChild._parentExportId = otherRoot._exportId
+    const before = await db.projects.count()
+    await expect(deriveImportProjectJSON(backup)).rejects.toThrow(/published turn parent crosses unrelated/)
+    expect(await db.projects.count()).toBe(before)
+    expect((await db.readerSessions.get(first.root))?.headTurnId).toBe(first.b)
+    expect((await db.readerSessions.get(second.root))?.headTurnId).toBe(second.b)
+  })
+
   it('D03: nested forks share a published ancestor prefix without editing either parent head', async () => {
     const scope = await workspace()
     const { root, a, b } = await rootWithHistory(scope)
