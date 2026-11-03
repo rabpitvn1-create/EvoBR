@@ -22,7 +22,7 @@ export async function callReaderModelV1(input:{
   messages:ChatMessage[]
   resolution:AIRequestConfigResolution
   signal?:AbortSignal
-}):Promise<{text:string;usage:{inputTokens:number|null;outputTokens:number|null}}>{
+}):Promise<{text:string;usage:{inputTokens:number|null;outputTokens:number|null};requestLifecycle:ChatResult['requestLifecycle']}>{
   const binding=input.handle.snapshot.contract.executionBindings?.find(b=>b.stepId===input.stage)
   const id=readerStageEntryV1(input.stage)
   if(!binding?.formalEntry||binding.skillId!==id)throw Error('[readerModel] frozen entry binding missing')
@@ -72,7 +72,7 @@ export async function callReaderModelV1(input:{
       break
     default:throw Error('[readerModel] unknown stage')
   }
-  return {text:output,usage:{
+  return {text:output,requestLifecycle:result.requestLifecycle,usage:{
     inputTokens:result.usage?.inputTokens??null,
     outputTokens:result.usage?.outputTokens??null,
   }}
