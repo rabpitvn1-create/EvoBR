@@ -148,7 +148,7 @@ export async function runReaderDurableSemanticReviewV1(input:{
   } as const
   const rawCall=async(messages:ChatMessage[]):Promise<string>=>{
     const result=await callReaderModelV1({
-      handle,stage:stageFromPhase[phase],caller:'src/lib/reader/semantic-review.ts',
+      handle,stage:stageFromPhase[phase],
       messages,resolution:input.resolution,signal:input.signal,
     })
     observedUsage=result.usage
