@@ -20616,10 +20616,6 @@
           "kind": "module"
         },
         {
-          "path": "src/lib/reader/context.ts",
-          "kind": "type"
-        },
-        {
           "path": "src/lib/reader/gateway-sources.ts",
           "kind": "module"
         },
