@@ -372,7 +372,9 @@ async function assertContextAnchors(input: AssembleContextInput, selected: Conte
 }
 
 function selectSources(input: AssembleContextInput): ContextSource[] {
-  if (!input.sourceKeys?.length) return CONTEXT_SOURCES
+  // Reader sources are opt-in only. Default authoring assembly must retain
+  // its pre-P3 source set and never attempt an unauthorized Reader read.
+  if (!input.sourceKeys?.length) return CONTEXT_SOURCES.filter(source => !source.key.startsWith('reader.'))
   return input.sourceKeys
     .map(key => CONTEXT_SOURCE_BY_KEY.get(key))
     .filter((source): source is ContextSource => !!source)
