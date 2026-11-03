@@ -1,95 +1,108 @@
-# P1 D10 Review Pack: Vietnamese Literary Rubric and Proposed Acceptance Thresholds
+# P1 D10: Muse Voice Selection, preregistered rubric and fixed literary gates
 
-**Status: DRAFT FOR NGUYEN'S PERSONAL APPROVAL. NOT APPROVED. NOT AN ACCEPTANCE RESULT.**
-This document is a proposed **decision ballot** for D10. It must be signed or amended by Nguyen **before formal blind ratings are opened or used for acceptance**. The existence of this file does not confer approval, even though D10's principle was signed in P0. Until approved, all ratings are exploratory, and no P1 literary pass can be declared.
+**Authority changed 2026-11-03:** Nguyen delegated D10's literary verdict and winning voice selection to **Muse**. Nguyen does NOT need to sign each literary quality decision. The numerical literary gates below are **fixed by Nguyen's P1 reassignment, before any four-profile results were generated**. Muse must explicitly preregister/acknowledge the complete rubric **before seeing blinded review results**, and may not lower or revise thresholds based on scores. This document records the fixed policy and implementation; **it does not claim Muse has already scored or formally preregistered it**.
 
-## 1. Study identity and source discipline
+**Current evidence status:** 0/80 real profile turns generated in this assistant environment, 0 blind rating packets emitted from genuine reports, no voice winner and no latency/token/cost measurements. Node 24, Codex authenticated CLI and compatible real-provider settings remain unavailable here. No fake result is admissible.
 
-Study design: **single-arm, blinded, within-story 20-turn evaluation**, not a randomized A/B comparison. The sole material is a genuine `status:'completed'` real-provider run from `reader-vietnamese-baseline.mjs`. No material exists until the provider is available and all 20 prose turns have been generated. The packet tool is `scripts/quality-evals/reader-blind-review.mjs`.
+## 1. Evaluation objective and four voice profiles
 
-Scenario: Cao Minh awakens alone in Backrooms Level 0, with old yellow rooms, humming fluorescent tubes and damp carpet. No map, companions or established knowledge. Only the fixed prompt facts count as authoritative for this baseline. New sensations, uncertainties and inference by the protagonist are possible prose developments, not automatically Canon. A real author-controlled World Canon baseline must later be re-evaluated in P2–P4.
+Every profile uses the **same fixed Cao Minh / Backrooms Level 0 opening**, the same no-quest/no-forced-ending/Canon constraints, the same model/provider/configuration and 20 consecutive turns with exact prior-turn history. **Only the Vietnamese system-prompt voice directive differs.** Profile catalog: `scripts/quality-evals/reader-voice-profiles.mjs`, `VOICE_PROFILES_V1` and exact prompt text are versioned; a profile is identified by its ID and SHA256. If the model changes, treat that as a separate secondary axis, with explicitly partitioned results, rather than silently mixing provider effects into voice rankings.
 
-Blindness:
-- Organizer retains `organizer-key.json` with run/provider identity, model settings and billing data. It is **never** shared with participants.
-- Participants receive their own standalone HTML and JSON packet with anonymized series ID and hashes. They see exactly 20 turns in their original order, necessary for continuity; they do not see model, price, prompt, benchmark version, author name, evaluator identities or hidden outcomes.
-- Every participant independently reads and scores. No feedback, discussion, AI-generated rating, prompt tuning or score-driven sample selection before results are closed.
-- Follow the six-axis labels from `longform-choice-questionnaire.mjs`; `reader-blind-review.mjs` deliberately uses the **single-arm** format and makes no A/B preference claims.
-- Participant response JSON is validated against the original packet ID and every turn's content hash. A reviewer may mark `unknown` rather than guess. Raw rating exports are retained separately from organizer mapping; no automatic quality pass logic lives in the packet generator.
-
-## 2. Six-dimensional rubric, 1–5 anchored scale
-
-Each dimension is scored **for each turn**. The reference meaning of 1, 3 and 5 is given below; 2 and 4 denote a defensible intermediate assessment. `unknown` is not a numeric score.
-
-| Dimension ID | 1: clearly deficient | 3: readable, needs revision | 5: consistently convincing |
-| --- | --- | --- | --- |
-| `immersion` | Hard to visualize place or stakes; no reader curiosity | Scene understandable, atmosphere sporadic | Strong sensory presence, stakes, evolving anticipation without repetitive formulas |
-| `causality` | Actions or events lack cause; Cao Minh behaves inconsistently | General logic works but motivations or transitions thin | Each decisive action arises from character knowledge/constraints and changes consequences credibly |
-| `payoff` | Emotional setup abandoned or effect arbitrary | Some tension and acknowledgment, uneven follow-through | Meaningful emotional or perceptual payoff proportional to buildup, while maintaining an open future |
-| `voice` | Translation-like/schematic Vietnamese, unconvincing inner perspective | Mostly natural but predictable AI cadence or flat interiority | Distinct, fluid Vietnamese narrative voice and nuanced Cao Minh reactions |
-| `pace` | Endless repetition, static loops or abrupt unexplained jumps | Mixed active and repetitive passages; uneven escalation | Controlled alternation of tension, observation and movement; each turn meaningfully advances the story |
-| `continuity` | Direct contradiction with prior published turns or fixed premise | Preserves major facts but loses minor positions, chronology or object states | Maintains precise causal, spatial and emotional continuity over the full preceding sequence |
-
-Reviewers record `readTo`, `continuation` (yes/maybe/no/unknown), and all six axes for each turn. The organizer additionally records **critical Canon violations** as a separate evidence-backed audit; this is **not** the same as a low literary score.
-
-## 3. Critical Canon incident: proposed closed definition
-
-**Draft severity S0 (fatal for P1 acceptance):** at least one cited passage verifiably does any of these in the 20-turn chain:
-
-1. Contradicts the fixed opening conditions without a narrated causal transition, e.g. Cao Minh suddenly has a companion from the outset, a map, or reliable prior knowledge when the premise says otherwise.
-2. Invents a named NPC and reports that person as established prior canon or shared protagonist history without source authorization. A deliberately unnamed uncertainty or a new, properly introduced encounter is not automatically a Canon violation, though it may have other narrative issues.
-3. Presents externally unsupported Level 0/Backrooms lore as an **authoritative known world law**, rather than as observed evidence, character hypothesis or ambiguous narration.
-4. Introduces explicit game UI mechanics, inventory, quest progression, combat stat systems or a forced hard ending in place of the agreed ongoing novel.
-5. Claims a previously published event, character, object or decision was different, without narrating an in-world reason, retroactively rewriting the immutable prose history.
-
-Audit artifact must contain `turn`, exact quotation, contradiction source (scenario clause or earlier turn/hash), category and reviewer. **Uncertain allegations are flagged for Nguyen to adjudicate and must not be silently classified as proven severe Canon errors.** Proposed acceptance requires **zero verified S0 incidents**.
-
-## 4. Proposed numerical gates, NOT approved
-
-These are **initial candidate policy numbers for Nguyen to accept, change or reject**, not measurements derived from provider runs. They are deliberately separated from technical completion. D10 cannot pass while any required metric is unknown.
-
-| Gate | Proposed threshold | Decision owner |
+| Internal profile ID, organizer only | Literary direction | Distinct experiment |
 | --- | --- | --- |
-| Blind rater count | At least **3 independent** completed reviews for the same 20-turn corpus | Nguyen |
-| Review completion | Each included reviewer must answer **20/20 turns** across all six dimensions (explicit `unknown` is a valid declared response but not a numeric score); incomplete packets are not counted as completed reviews | Nguyen |
-| Six-axis literary mean | Every axis has overall mean at least **3.7/5** across valid rated turns and reviewers | Nguyen |
-| Continuity stricter gate | Continuity overall mean at least **4.0/5**, and no confirmed direct contradiction masked by a good average | Nguyen |
-| Per-turn collapse | No more than **2/20 turns** have median under **3/5** on any axis; list each such passage | Nguyen |
-| Willingness to continue | At least **70%** of non-unknown responses indicate yes or maybe; no forced ending | Nguyen |
-| Critical Canon errors | **0 verified S0 incidents** (see §3) | Nguyen |
-| Output language | **20/20 passages** substantive Vietnamese narrative; foreign names/terms allowed where context requires | Nguyen |
-| Token ceiling for 20 turns | At most **200,000 measured input tokens** and **30,000 measured output tokens**; no inferred usage counted as observed | Nguyen |
-| Latency ceiling | Successful call **p95 ≤ 60 seconds** and total wall-clock benchmark ≤ **25 minutes** (excluding human assessment) | Nguyen |
-| Estimated cost ceiling | **≤ US$5.00** for 20 turns using documented real input/output token prices; if Codex subscription exposes no defensible per-token price, mark cost **unknown**, not zero | Nguyen |
-| Repeatability | One complete unmodified reference run; no cherry-picked alternate run replaces a failed baseline | Nguyen |
+| `cinematic_minimal` | Lạnh, tối giản, điện ảnh | Concrete movement, spare syntax, restrained fear, controlled negative space |
+| `sensory_urgent` | Giàu hình ảnh, nhịp dồn dập | Strong sensory detail, varied pace, active pressure without purple prose |
+| `psychological_slow` | Chậm, ám ảnh tâm lý | Accumulating uncertainty and interior perception, never invented prehistory |
+| `restrained_intimate` | Nội tâm tiết chế, giàu sức nặng | **Fourth candidate:** emotional depth from difficult, causally grounded decisions while still advancing events; balances commercial readability and literary restraint |
 
-**Interpretation note:** 20 turns are evaluated in a fixed story sequence and are not independent statistical samples. Report per-turn trajectory, six-axis distribution and disagreements; do not call means a population-level guarantee. The listed numbers require explicit Nguyen approval or amendment **before opening formal blind ratings**, regardless of how many drafts Muse or the assistant review.
+**Reason for the fourth profile:** It is not a blend created after seeing results. It tests whether grounded, emotionally intimate narration can outperform purely visual, sensory and slowly psychological styles on the six-axis rubric. Its prompt is frozen before generation and must be transferred byte-for-byte to P4 if selected.
 
-## 5. Measurement and D2/V3 handoff
+No model-generated choices, reader DB updates, editor changes or Chinese-guard changes occur in P1. Rerunning a losing profile with a changed prompt is a **new, versioned round**, never a retroactive correction of its original score.
 
-P1.2 must produce a real, complete 20-turn report with per-call and per-turn input/output tokens, duration, observed request phase, retry/error reason, p50/p95 and priced estimate when available. Empty `usage` is `null`, not zero. A dispatched call that failed might be billed, so any claimed total-cost figure must remain unknown in that situation until the provider can reconcile usage. `maxModelCalls:4` in existing chapter V3 does not cover the future reader pipeline: the P4 turn can require **up to six calls** before retries, and those must be measured separately.
+## 2. Six-dimensional blind rubric registered BEFORE outcomes
 
-Suggested D2 limit must be argued from observed error counts, latency distribution, retry effectiveness, and per-request billing exposure. **P1 does not choose a final D2 retry count by intuition.**
+Muse rates **each of the 20 turns of each profile** on six dimensions from 1 to 5. Intermediate 2 and 4 mean between the corresponding anchors, not a different scoring system. A full submission is **20 × 6 numeric scores per profile**; `unknown` may be captured in draft but is NOT included in formal selection and must be resolved before ranking.
 
-V3 smoke test is optional in P1, but **only a provider-backed actual callback execution qualifies**. If Node24, authenticated provider or reviewed resources are unavailable, explicitly report **not executed**.
+| Dimension | 1: deficient | 3: readable but needs editing | 5: outstanding, commercially readable prose |
+| --- | --- | --- | --- |
+| `immersion` | No vivid location or reader anticipation | Scene recognizable, atmosphere uneven | Sustained presence, mounting curiosity and credible sensory stakes |
+| `causality` | Actions/events appear without reasons | Main chain understandable, weak transitions | Every choice/action follows knowledge and constraints; consequences evolve |
+| `payoff` | Setups never pay off or surprises arbitrary | Some emotional effects, uneven follow-through | Every meaningful tension arc yields proportionate emotional or narrative value, even in an open-ended story |
+| `voice` | Mechanical Vietnamese, copied cadence or generic model texture | Legible but inconsistent narrator/character interiority | Distinct publishable Vietnamese narrative voice, varied but coherent sentence rhythm |
+| `pace` | Repetitive loops, idle scene, unexplained jump | Some development but patchy momentum | Deliberate movement, alternation of pressure and relief; every turn adds a meaningful development |
+| `continuity` | Contradicts earlier published text or fixed premise | Large facts consistent; local details drift | Spatial, causal, object, temporal and emotional continuity intact across all prior turns |
 
-## 6. Commands and artifacts
+A Muse review MUST explicitly mark every turn, and a separate Muse Canon audit MUST be signed for **every anonymous series** before the organizer maps are revealed. There is no automatic score, no invented reviewer and no claim that this single-reviewer competition measures population reader preferences or predicts actual sales. "Bán chạy được" is a qualitative editorial goal, not a claim of sales data.
 
-Once a real complete baseline report exists:
+## 3. Fixed literary pass/fail rules, not adjustable after results
+
+These are the exact Nguyen-directed D10 selection thresholds registered before review:
+
+| Criterion | Fixed rule |
+| --- | --- |
+| Overall literary average | Across all **120 scores** for a profile, mean **≥ 4.0 / 5** |
+| Minimum per dimension | Every dimension's mean across 20 turns **≥ 3.5 / 5** |
+| Voice criterion | The `voice` dimension mean across 20 turns **≥ 4.0 / 5** |
+| Serious Canon errors | **ZERO confirmed** severe Canon violations of the three preregistered categories below; unresolved/uncertain allegations block a passing verdict pending Muse review |
+| Winning profile | Among qualifying profiles, choose the **highest overall 120-score mean**. Exact tie on overall → higher voice mean wins. Further exact tie → Muse must explicitly adjudicate; no hidden arbitrary tiebreak |
+| No qualifying profile | **No winner**. Create a **new, versioned four-profile round** without lowering any thresholds or reusing unsuccessful outputs as a pass |
+| Continuity evidence | Muse evaluates all 20 turns in sequence; no skipping bad turns, cherry picking or substituting a later edited variant |
+| Fair comparison | Same scenario, generation constraints and model config. Only declared style directive differs |
+
+Serious Canon error categories for the locked audit:
+
+1. `named-canon`: A fabricated named NPC or named entity is presented as pre-existing established Canon/history without authorized source. Mere introduction of a new anonymous encounter is not automatically this error.
+2. `history-contradiction`: The new prose rewrites or directly contradicts an earlier **published** event, location, object state, protagonist knowledge or the fixed opening premise without any in-world causal transition.
+3. `forced-ending`: The narration asserts a final ending, closes the work involuntarily or denies the continuing-story contract.
+
+Each claimed serious incident must cite the exact offending quote and comparison (fixed scenario clause or prior turn/hash) and have a Muse verdict `confirmed` or `uncertain`. The tool does not infer Canon from text or automatically declare zero incidents: Muse must set `reviewed:true` for each audit after inspecting the entire chain.
+
+Other stylistic defects (unsupported sensory detail, unnatural prose, purple prose, incorrect game-like tone) should be scored and discussed, but must not secretly introduce new rejection thresholds after ratings. If a new structural hard-rule breach is discovered, record it separately for P4 rather than recoding the above three S0 categories post hoc.
+
+## 4. Double-blind-enough package, no fake A/B claims
+
+`reader-voice-tournament.mjs pack` randomly shuffles four completed real reports into neutral `sample-01` to `sample-04` identifiers. Muse sees only participant HTML/JSON, the prose and six-axis questions. Profile IDs, system prompts, model information, prices, scenario metadata, backend run IDs and mapping stay exclusively in `organizer-key.json` outside the participant folder until all scores **and** four Canon audits are sealed. Muse reads each 20-turn series **in narrative order** for valid continuity judgments. This is a **blinded four-arm literary voice selection**, **not** an A/B test.
+
+The optional `reader-blind-review.mjs` single-arm tool remains available for a non-comparative baseline study, but D10 selection uses `reader-voice-tournament.mjs` on four profiles.
+
+The organizer must not open the identity map and tell Muse which sample is which before scoring is finished. The released final report reveals all profiles, winner or no winner, per-turn six-axis points and metrics **including losers**; the winner's exact `p4PromptDirective`, version and hash are the P4 handoff.
+
+## 5. Operational thresholds separate from literary D10
+
+**Muse sets token, latency and cost ceilings only from real P1.2 measurements.** They are operating-policy gates, not post-hoc changes to the predeclared literary rubric. Until actual usage, p50/p95 latency, provider price and retry distribution exist, no numerical operational ceiling is approved. Existing draft figures (200,000/30,000 tokens, 60 s p95, 25 minutes, US$5) are **withdrawn**, not secretly retained as D10 gates.
+
+Report for every profile and the tournament: calls, per-call/turn tokens, p50/p95, elapsed time, retries and their causes, provider/model/version and exact model-price evidence where available. Missing usage/pricing is `null`, not zero. Failed dispatched calls may have unobserved billing. If the Codex subscription cannot provide a defensible USD-per-token price, cost remains unknown and is not misrepresented as free.
+
+P4's eventual full pipeline has up to **six AI calls per normal turn** before retries, while P1 prose-only baseline calls one model per turn. These are different cost surfaces; do not extrapolate a P1 voice winner into unverified V3 correctness.
+
+## 6. How to run, audit and rank
+
+Prerequisites: Node 24, `npm ci`, Playwright Chromium, and a **real provider** configured for the existing `src/lib/ai/client.ts::chat`, or an authenticated `codex` CLI with explicit opt-in. No mock fallback.
 
 ```bash
-node scripts/quality-evals/reader-blind-review.mjs pack ./p1-results/baseline-RUN.json ./p1-blind rater01,rater02,rater03
+node scripts/quality-evals/reader-voice-tournament.mjs generate ./p1-voice-results
 ```
 
-Hand each person **only** their own file under `p1-blind/participants/`. They open the HTML offline, score each turn, and click the export button to produce `*-review.json`. The organizer key remains private to the study coordinator.
+This runs the four styles **sequentially**, each a separate real 20-turn chained narrative. Do not re-run a failed/ambiguous dispatched request under the same output directory. When all four reach `completed`:
 
 ```bash
-node scripts/quality-evals/reader-blind-review.mjs validate ./p1-blind/participants/rater01.json ./rater01-review.json
+node scripts/quality-evals/reader-voice-tournament.mjs pack ./p1-voice-results ./p1-voice-blind Muse
 ```
 
-No fake participant ratings, no A/B packet reuse, no automated pass declaration. Validating identity and completeness does not evaluate the literary thresholds.
+Give Muse **only** `p1-voice-blind/participants/`, not `organizer-key.json` and not profile-labelled reports. Muse fills the four HTML reviews and exports each response as `sample-XX-review.json`, then edits its corresponding `sample-XX-canon-template.json` to `sample-XX-canon.json`, setting `reviewed:true` after independent complete Canon review. Default `reviewed:false` is deliberate: empty incidents do not count as a verified zero until Muse certifies them.
 
-## 7. D10 explicit sign-off ballot (not yet signed)
+After all scores and audits are sealed, the organizer runs:
 
-Nguyen is asked to confirm or amend **the complete rubric and thresholds in §2–§4**, including what constitutes S0 and the token, p95 latency, total time and cost ceilings. Confirmation must be dated and recorded **before** formal packet results are opened. Until then the document's approval status remains **DRAFT / awaiting Nguyen**.
+```bash
+node scripts/quality-evals/reader-voice-tournament.mjs rank ./p1-voice-blind ./sealed-muse-scores ./p1-voice-decision.json
+```
 
-**Current run status at authoring:** No authenticated provider and Node24 in this assistant container; **0/20 real turns completed**, no literary ratings or V3 smoke available. The packet maker refuses partial runs. This section must be updated with concrete evidence, not wishful outcomes.
+The ranking step checks every packet hash, 20 × 6 numeric scores, Canon audit quote evidence and the exact preregistered thresholds. It outputs all four profiles, six dimension means, every turn's points, provider metrics, Canon incidents and the chosen P4 prompt directive if there is one. If no profile qualifies it explicitly returns `new-round-required` without altering standards.
+
+## 7. Preregistration status and decision ownership
+
+- Literary reviewer and final voice selector: **Muse** by Nguyen's delegated authority.
+- The four style prompts and the thresholds in §3 are frozen in code/doc **before real results**. They may be reviewed for correctness and consistency before any inference/rating, but cannot be quietly altered after data has been seen.
+- Muse must explicitly record their review of this preregistration in the conversation or GitHub **before scoring**. The mere existence of this file does not impersonate Muse's signature.
+- No provider run, blind score, final winning voice or operational ceiling is claimed as of this document revision.
+- Nguyen need not approve D10 literary scoring. The technical implementation may proceed through Muse review/merge rules, but a literary winner cannot be announced until the real experiment and sealed blind review exist.
