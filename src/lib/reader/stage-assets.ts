@@ -15,7 +15,7 @@ const entities=['smiler','clump','deathmoth','skin-stealer','wretch','duller',
   'slenderman','hostile-faceling'] as const
 export const READER_STAGE_ASSETS_V1:ReaderStageManifestV1={
   levels:Object.fromEntries(levelIds.map(id=>[id,'/reader-assets/levels/'+id+'.webp'])),
-  levelFocus:Object.fromEntries(levelIds.map(id=>[id,{x:50,y:50}])),
+  levelFocus:Object.fromEntries(levelIds.map(id=>[id,{x:50,y:id==='level-5'?28:50}])),
   protagonist:'/reader-assets/characters/cao-minh.webp',
   entities:{
     ...Object.fromEntries(entities.map(id=>[id,'/reader-assets/entities/'+id+'.webp'])),
