@@ -29,7 +29,7 @@ describe('U1.1 choices visual metadata instructions',()=>{
     expect(parseReaderBranchChoicesV1(valid,prose).choices).toHaveLength(1)
     expect(normalizeReaderSceneHintsV1(JSON.parse(valid).sceneHints))
       .toEqual({levelId:'level-0',entityIds:['brownies','smiler']})
-    const fake=valid.replace('ngã rẽ','đoạn văn không tồn tại')
+    const fake=valid.replace('"sourceQuote":"ngã rẽ"','"sourceQuote":"đoạn văn không tồn tại"')
     expect(parseReaderBranchChoicesV1(fake,prose).choices).toHaveLength(0)
   })
   it('missing or malformed hint does not reject otherwise grounded branch JSON',()=>{
