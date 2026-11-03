@@ -234,6 +234,9 @@ describe('P3 Reader Context & Memory C01–C14',()=>{
     expect(compressed.selectedSummaryThroughTurnId).toBe(t2)
     expect(valuesOf(compressed,'reader.published-history')).toContain('nghe đèn kêu')
     expect(valuesOf(compressed,'reader.published-history')).not.toContain('đi qua phòng')
+    const stored=await db.readerMemory.where('[sessionId+throughTurnId]').equals([sid,t2]).first()
+    await db.readerMemory.update(stored!.id!,{summary:'unauthorized tampered summary'})
+    await expect(context(scope,sid,budget)).rejects.toThrow(/summary/)
     expect(t1).not.toBe(t2)
   })
   it('C13: parent summary beyond child fork cannot be used for compressed memory',async()=>{
@@ -271,6 +274,10 @@ describe('P3 Reader Context & Memory C01–C14',()=>{
       taskKind:'summary',taskId:task.taskId,sourceHash:task.sourceHash,outcome:'completed',
       summary:'Cao Minh tiếp tục.'})
     expect(repeated.tasks.filter(x=>x.taskKind==='summary'&&x.status==='completed')).toHaveLength(1)
+    await expect(settleReaderMemoryTaskV1({workspace:scope,sessionId:sid,throughTurnId:t,
+      taskKind:'summary',taskId:task.taskId,sourceHash:task.sourceHash,
+      outcome:'completed',summary:'Tóm tắt khác trong cùng task ID'}))
+      .rejects.toThrow(/conflicting retry/)
     expect((await db.readerTurns.get(t))!.content).toBe(original)
     expect(await db.readerMemory.where('sessionId').equals(sid).count()).toBe(1)
   })
