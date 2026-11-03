@@ -303,3 +303,7 @@ export {
   beginReaderMemorySagaV1, settleReaderMemoryTaskV1, retryReaderMemoryTaskV1,
   inspectReaderMemorySagaV1,
 } from './memory-saga'
+
+// P5 public coordinator entrypoint; no Reader UI is mounted in this stage.
+export type { ReaderPublishedResultV1 } from './recovery'
+export type { ReaderTurnIntentV1, ReaderPublicationReceiptV1, ReaderPublicationRequestV1 } from './publication'
