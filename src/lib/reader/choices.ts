@@ -192,7 +192,7 @@ export async function runReaderChoiceStageV1(input:{
         attempt,messages,maxOutputTokens:1200})
       attempts++
       const response=await callReaderModelV1({
-        handle,stage:READER_STEPS_V1.choices,caller:'src/lib/reader/choices.ts',
+        handle,stage:READER_STEPS_V1.choices,
         messages,resolution:input.resolution,signal:input.signal,
       })
       const responseHash=await hashCanonicalValue(response.text)
@@ -222,7 +222,7 @@ export async function runReaderChoiceStageV1(input:{
         handle,stepId:READER_STEPS_V1.choiceCheck,messages,maxOutputTokens:1200,
       })
       const response=await callReaderModelV1({
-        handle,stage:READER_STEPS_V1.choiceCheck,caller:'src/lib/reader/choices.ts',
+        handle,stage:READER_STEPS_V1.choiceCheck,
         messages,resolution:input.resolution,signal:input.signal,
       })
       verifierResponseHash=await hashCanonicalValue(response.text)
