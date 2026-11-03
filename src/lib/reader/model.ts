@@ -27,7 +27,7 @@ export async function callReaderModelV1(input:{
   const id=readerStageEntryV1(input.stage)
   if(!binding?.formalEntry||binding.skillId!==id)throw Error('[readerModel] frozen entry binding missing')
   const step=input.handle.snapshot.projection.steps[input.stage]
-  const record=input.handle.records.at(-1)
+  const record=input.handle.records[input.handle.records.length-1]
   if(!step||step.status!=='running'||!record||
     record.stepId!==input.stage||record.attempt!==step.attempt||
     record.dispatchStarted||record.responseHash!==null||
