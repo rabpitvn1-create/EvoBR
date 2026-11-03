@@ -131,6 +131,7 @@ test('U1.1 actual mobile art: all seven LEVELs load and produce review screensho
     await page.goto(path(scope,scope.levels[i]))
     await expect(page.locator('.ebr-stage[data-level="level-'+i+'"]')).toHaveCount(1)
     const image=page.locator('.ebr-stage-background')
+    await expect(image).toHaveCSS('object-position',i===5?'50% 28%':'50% 50%')
     await expect(image).toHaveJSProperty('complete',true)
     expect(await image.evaluate(el=>(el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
     await expect(page.locator('.ebr-stage-protagonist')).toHaveJSProperty('complete',true)
