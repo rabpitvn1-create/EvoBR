@@ -613,7 +613,32 @@ export type ContextSourceTransformer = (
   input: ContextSourceTransformInput,
 ) => Promise<ContextSourceTransformResult | undefined>
 
+export interface ReaderContextScopeV1 {
+  projectId: number
+  worldId: number
+  workId: number
+  sessionId: number
+  headTurnId: number | null
+  expectedRevision: number
+  canonBaselineHash: string
+  lineageFingerprint: string
+  selectionPolicyVersion: string
+}
+
+/** Reader adapter supplies prevalidated immutable source strings, never Work reader keys. */
+export interface ReaderFrozenSourceSnapshotV1 {
+  version: 1
+  scope: ReaderContextScopeV1
+  contentByKey: Record<string, string>
+  sourceHashes: Record<string, string>
+  snapshotHash: string
+}
+
 export interface AssembleContextInput {
+  /** P3 reader-only scope, independently enforced at the common assembly boundary. */
+  readerContextScope?: ReaderContextScopeV1
+  readerFrozenSources?: ReaderFrozenSourceSnapshotV1
+
   extensionSnapshot?: import('../extensions/types').ExtensionRegistrySnapshot
   projectId: number
   /** Explicit logical read boundary; callers should always provide current WorkspaceScope. */
