@@ -209,13 +209,14 @@ export async function runReaderDurableSemanticReviewV1(input:{
       },
     })
   }catch(error){
-    if(active)await failReaderModelStepV1(handle,active.stepId,active.attempt,error)
+    const failed=active as {stepId:ReaderStepV1;attempt:number;startedAt:number}|null
+    if(failed)await failReaderModelStepV1(handle,failed.stepId,failed.attempt,error)
     throw error
   }
   await assertReaderContextCurrentV1(handle.scope,handle.frozen)
   if(cycle.status==='passed')assertReaderVietnameseProseV1(cycle.outputText)
   const body={
-    version:READER_V3_RECEIPT_VERSION_V1,runId:handle.snapshot.run.id,
+    version:READER_V3_RECEIPT_VERSION_V1 as const,runId:handle.snapshot.run.id,
     attemptHash:handle.identity.attemptHash,
     contextManifestHash:handle.frozen.contextManifestHash,
     originalProseHash:await hashCanonicalValue(input.originalText),
