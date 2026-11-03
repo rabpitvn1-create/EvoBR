@@ -94,7 +94,7 @@ Memory saga and retrieval indexing may be partial; the atomic publication unit m
 | `src/lib/ai/adapters/chapter-adapter.ts` / `src/lib/ai/adapters/prompt-guards.ts` | Extract/reuse suitable template/continuity principles; reader adapter enforces Vietnamese instead of `appendSimplifiedChineseOutputConstraint`. Do not modify editor authoring semantics. |
 | `src/lib/agent/formal-ai-entry.ts` / `src/lib/ai/client.ts` | Preserve formal entry and provider transport; register reader usage according to existing registry policy. |
 | `src/lib/agent/run/prose-generation-durable.ts` | Reuse generation/candidate event pattern, not chapter-specific adoption function. |
-| `src/lib/agent/run/prose-semantic-durable.ts` | Wire injected real callbacks with frozen reader context. Precisely assess reader compatibility in P0.3 before P4 implementation. |
+| `src/lib/agent/run/prose-semantic-durable.ts` | Use as a **chapter-only pattern**, not a direct reader executor: P0.3 confirms its required `chapterId`. A new reader durable wrapper reuses `src/lib/agent/prose-semantic-review.ts` pure cycle and artifact verification with injected real callbacks and frozen reader context. |
 | `src/lib/registry/field-registry.ts`, `adoption-schema.ts`, `project-tables.ts` | Register reader fields/targets/owners before first write. Keep metadata/trusted-only fields out of model-controlled payload. |
 | New `src/lib/reader/commit.ts` (proposed path) | Reader publication coordinator and atomic outer transaction. |
 | New `src/lib/reader/publication.ts` (proposed path) | Typed intent, snapshot and publication gate; only reader module may authorize commit. |
@@ -127,7 +127,7 @@ Proposed paths are not claims of existing files. Existing authoring UI, manual c
 - This file supersedes P0.1's provisional required `readerTurns.publicationRunId` to remove an unnecessary circular FK. Receipt→turn is sufficient; exact physical schema must reflect this in P2.
 - The `readerPublicationRuns` receipt must store the intent fingerprint; add a required `requestFingerprint` in the physical schema.
 - **Resolved by P0.3:** V3 operates on prose only, using a reader-specific wrapper without a fake chapter. Choices are generated from **final V3-approved prose** and verified for grounding/coherence with separate governed evidence. Refer to [P0.3](./03-v3-production-wiring.md).
-- P0.4 must choose Canon baseline snapshot representation, branch memory projection and source eligibility; no default to Work current-state is permitted.
-- P0.5 must translate these contracts into an ordered file-level plan and tests, including deferred import pointer handling.
+- **Resolved by P0.4:** Canon baseline is an immutable, hash-verified reader-owned snapshot in `readerSessions`; confirmed-only reader facts, lineage cutoff and full-text-first continuity are governed by [P0.4](./04-reader-context-memory-contract.md). No live Work fallback.
+- **Resolved by P0.5:** Ordered implementation files, unified matrix, budgeting and importer proof ownership are in [P0.5](./05-implementation-plan-and-regression-matrix.md).
 
 No production behavior is modified by this document.
