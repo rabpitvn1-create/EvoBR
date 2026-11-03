@@ -179,3 +179,17 @@ export async function forkReaderSessionV1(
     }) as Promise<number>
   })
 }
+
+/**
+ * Non-destructive reader retirement. Referenced ancestors are archived, not
+ * removed; existing children and immutable prose must stay available.
+ */
+export async function archiveReaderSessionV1(scope: WorkspaceScope, sessionId: number): Promise<void> {
+  await db.transaction('rw', db.readerSessions, async () => {
+    const record = await db.readerSessions.get(sessionId)
+    if (!record || record.projectId !== scope.projectId || record.workId !== scope.workId) {
+      fail('cannot archive a foreign or missing reader session')
+    }
+    await db.readerSessions.update(sessionId, { status: 'archived', updatedAt: Date.now() })
+  })
+}
