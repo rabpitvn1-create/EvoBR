@@ -26,6 +26,15 @@ export async function callReaderModelV1(input:{
   const binding=input.handle.snapshot.contract.executionBindings?.find(b=>b.stepId===input.stage)
   const id=readerStageEntryV1(input.stage)
   if(!binding?.formalEntry||binding.skillId!==id)throw Error('[readerModel] frozen entry binding missing')
+  const step=input.handle.snapshot.projection.steps[input.stage]
+  const record=input.handle.records.at(-1)
+  if(!step||step.status!=='running'||!record||
+    record.stepId!==input.stage||record.attempt!==step.attempt||
+    record.dispatchStarted||record.responseHash!==null||
+    input.handle.calls<1||input.handle.calls>6){
+    throw Error('[readerModel] no authorized single-use durable model dispatch slot')
+  }
+  record.dispatchStarted=true
   const skill=getAgentSkillV1(id,'prose')
   // Never let a wide application preset overrun the registered Reader Skill
   // output quota. Provider/model and auth route remain frozen across the run.
