@@ -9,6 +9,7 @@ import {seedCurrentWorkspace} from '../helpers/current-workspace'
 import {createRootReaderSessionV1} from '../../src/lib/reader/baseline'
 import {generateReaderTurnCandidateV1,verifyReaderGenerationCandidateV1}
   from '../../src/lib/reader/generation'
+import {callReaderModelV1,resolveFrozenReaderModelV1} from '../../src/lib/reader/model'
 import type {AIConfig} from '../../src/lib/types'
 
 const prose='Cao Minh dừng lại trước cánh cửa khép hờ. Mùi thảm ẩm lẩn vào hơi thở, và ánh đèn vàng khiến anh không chắc mình đã đứng đây bao lâu.'
@@ -57,6 +58,14 @@ describe('P4 real-client and formal transport smoke, HTTP stubbed',()=>{
     expect(candidate.choices.choices[0].sourceQuote).toBe(quote)
     expect(candidate.v3.correlatedJudge).toBe(true)
     expect(await verifyReaderGenerationCandidateV1({workspace:scope,frozen,handle,candidate})).toBe(true)
+    // The real transport itself rejects any second dispatch after the durable
+    // prose step has already settled; no fifth HTTP request can escape.
+    await expect(callReaderModelV1({
+      handle,stage:'reader-prose',
+      messages:[{role:'user',content:'Illegitimate duplicate model call'}],
+      resolution:resolveFrozenReaderModelV1(config),
+    })).rejects.toThrow(/single-use durable model dispatch slot/)
+    expect(fetchStub).toHaveBeenCalledTimes(4)
     expect(await db.readerTurns.count()).toBe(0)
     expect(await db.readerPublicationRuns.count()).toBe(0)
   })
