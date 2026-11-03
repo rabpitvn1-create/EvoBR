@@ -9974,6 +9974,10 @@
           "kind": "module"
         },
         {
+          "path": "src/lib/ai/whole-json-container.ts",
+          "kind": "module"
+        },
+        {
           "path": "src/lib/generation/generation-node.ts",
           "kind": "type"
         },
@@ -20276,6 +20280,10 @@
         {
           "path": "src/lib/ai/client.ts",
           "kind": "type"
+        },
+        {
+          "path": "src/lib/ai/whole-json-container.ts",
+          "kind": "module"
         },
         {
           "path": "src/lib/db/schema.ts",
