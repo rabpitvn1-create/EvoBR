@@ -293,3 +293,9 @@ export async function assertReaderContextCurrentV1(
 export function invalidateReaderContextAfterImportOrRefreshV1():void {
   invalidateContextGatewayCacheV1('reader-import-or-refresh')
 }
+
+// Public P3 reader memory task entrypoints share the same governed reader adapter.
+export {
+  beginReaderMemorySagaV1, settleReaderMemoryTaskV1, retryReaderMemoryTaskV1,
+  inspectReaderMemorySagaV1,
+} from './memory-saga'
