@@ -20418,6 +20418,10 @@
           "kind": "module"
         },
         {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
           "path": "src/lib/memory/artifact-store.ts",
           "kind": "module"
         },
