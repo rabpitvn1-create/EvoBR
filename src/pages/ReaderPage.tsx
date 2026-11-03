@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { db } from '../lib/db/schema'
 import { resolveScope } from '../lib/workspace/scope'
-import { resolveReaderLineageV1 } from '../lib/reader/lineage'
+import { readReaderPublishedViewV1 } from '../lib/reader/readback'
 import { createRootReaderSessionV1, forkReaderSessionV1 } from '../lib/reader/baseline'
 import { publishReaderTurnV1, recoverReaderPublicationV1 } from '../lib/reader/recovery'
 import type { ReaderTurnIntentV1 } from '../lib/reader/publication'
@@ -71,16 +71,8 @@ export default function ReaderPage(){
     const id=currentId??target??null
     if(currentId!==null&&!listed.some(s=>s.id===currentId))
       throw Error('Phiên đọc không thuộc tác phẩm này.')
-    let next:ReaderViewV1|null=null
-    if(id!==null){
-      const lineage=await resolveReaderLineageV1(nextScope,id)
-      const head=lineage.session.headTurnId
-      const currentChoices=head===null?[]:(await db.readerChoices.where('turnId').equals(head).toArray())
-        .filter(c=>c.projectId===projectId&&c.status==='available'&&
-          (c.kind==='branch'||c.kind==='continue'))
-        .sort((a,b)=>a.order-b.order)
-      next={session:lineage.session,turns:lineage.turns,choices:currentChoices}
-    }
+    const next:ReaderViewV1|null=id===null?null:
+      await readReaderPublishedViewV1(nextScope,id)
     if(!mounted.current||sequence!==refreshId.current)return
     setScope(nextScope);setWorkTitle(work.title);setSessions(listed);setView(next)
     if(currentId===null&&id!==null)selectSession(id)
@@ -143,7 +135,10 @@ export default function ReaderPage(){
     sessionStorage.setItem(pendingStorageKey(currentScope),
       JSON.stringify({workId:currentScope.workId,intent} satisfies PendingRequestV1))
     try{
-      const config=useAIConfigStore.getState().config
+      const configured=useAIConfigStore.getState().config
+      // The P4 governed adapter requires a positive output reservation;
+      // the existing app preset uses 0 to mean unlimited.
+      const config={...configured,maxTokens:configured.maxTokens>0?configured.maxTokens:1800}
       await publishReaderTurnV1({
         workspace:currentScope,intent,config,
         inputBudgetTokens:INPUT_BUDGET_TOKENS,
