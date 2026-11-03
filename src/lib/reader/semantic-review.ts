@@ -138,6 +138,7 @@ export async function runReaderDurableSemanticReviewV1(input:{
   let phase:'review'|'revision'|'rereview'='review'
   let active:{stepId:ReaderStepV1;attempt:number;startedAt:number}|null=null
   let observedUsage:{inputTokens:number|null;outputTokens:number|null}={inputTokens:null,outputTokens:null}
+  let observedLifecycle:{phase:'pre-dispatch'|'request-dispatched'|'response-observed';responseStatus:number|null}|undefined
   const stageFromPhase={
     review:READER_STEPS_V1.review,
     revision:READER_STEPS_V1.revise,
@@ -149,6 +150,7 @@ export async function runReaderDurableSemanticReviewV1(input:{
       messages,resolution:input.resolution,signal:input.signal,
     })
     observedUsage=result.usage
+    observedLifecycle=result.requestLifecycle
     return result.text
   }
   let cycle:ProseSemanticReviewCycleResultV1
@@ -182,7 +184,7 @@ export async function runReaderDurableSemanticReviewV1(input:{
           if(!active||active.stepId!==stepId)fail('V3 callback phase switched without matched request')
           await finishReaderModelStepV1({handle,stepId,attempt:active.attempt,
             startedAt:active.startedAt,output:event.output??'',complete:false,
-            inputTokens:observedUsage.inputTokens,outputTokens:observedUsage.outputTokens})
+            inputTokens:observedUsage.inputTokens,outputTokens:observedUsage.outputTokens,requestLifecycle:observedLifecycle})
         }
       },
       onReviewArtifact:async artifact=>{
