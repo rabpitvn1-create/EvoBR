@@ -10,9 +10,9 @@ async function seed(page:Page){
     const {sha256Text}=await import('/storyforge/src/lib/ai/chapter-memory/text-normalization.ts')
     await db.delete();await db.open()
     const {scope}=await seedCurrentWorkspace('U1.1 LEVEL illustrations')
-    const make=async(levelId:string|null,entityIds:string[])=>{
+    const make=async(levelId:string|null,entityIds:string[],repetitions=1)=>{
       const sessionId=await createRootReaderSessionV1(scope,{maxSnapshotBytes:2000000})
-      const content='Cao Minh dừng lại. Những bức tường chìm trong ánh sáng mỏng, và từng tiếng động nhỏ vang lên từ cuối hành lang.'
+      const content='Cao Minh dừng lại. Những bức tường chìm trong ánh sáng mỏng, và từng tiếng động nhỏ vang lên từ cuối hành lang.'.repeat(repetitions)
       const contentHash=await sha256Text(content)
       const turnId=await db.readerTurns.add({
         projectId:scope.projectId,sessionId,parentTurnId:null,turnOrdinal:1,
@@ -43,7 +43,8 @@ async function seed(page:Page){
     for(let i=0;i<=6;i++)levels.push(await make('level-'+i,i===0?['wretch','smiler']:[]))
     const missing=await make(null,[])
     const unknown=await make('level-unknown',[])
-    return {...scope,levels,missing,unknown}
+    const longSession=await make('level-0',[],45)
+    return {...scope,levels,missing,unknown,longSession}
   })
 }
 function path(scope:{projectId:number;workId:number},sessionId:number){
@@ -139,4 +140,25 @@ test('U1.1 actual mobile art: all seven LEVELs load and produce review screensho
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth))
       .toBeLessThanOrEqual(0)
   }
+})
+
+test('U1.1 reopening Reader chooses recent session and restores saved reading scroll',async({page})=>{
+  await page.setViewportSize({width:412,height:915})
+  await page.route('**/reader-assets/**',route=>route.fulfill({
+    status:200,contentType:'image/svg+xml',body:svg,
+  }))
+  const scope=await seed(page)
+  await page.goto(path(scope,scope.longSession))
+  await expect(page.locator('.ebr-reader-turn')).toHaveCount(1)
+  const key='evobr-reader-scroll-v1:'+scope.projectId+':'+scope.workId+':'+scope.longSession
+  await page.evaluate(()=>window.scrollTo(0,520))
+  await expect.poll(()=>page.evaluate(k=>Number(localStorage.getItem(k)),key)).toBeGreaterThan(400)
+  const saved=await page.evaluate(k=>Number(localStorage.getItem(k)),key)
+  await page.reload()
+  await expect(page.locator('.ebr-reader-turn')).toHaveCount(1)
+  await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThan(400)
+  expect(Math.abs((await page.evaluate(()=>window.scrollY))-saved)).toBeLessThanOrEqual(2)
+  await page.goto('./reader/'+scope.projectId+'/'+scope.workId)
+  await expect(page.locator('.ebr-reader-session-toggle')).toContainText('#'+scope.longSession)
+  await expect(page.locator('.ebr-reader-turn')).toHaveCount(1)
 })
