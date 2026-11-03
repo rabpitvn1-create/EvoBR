@@ -244,7 +244,7 @@ export default function ReaderPage(){
           <button type="button" disabled={busy||uncertain} onClick={()=>void create()}>Bắt đầu đọc</button></div>:
           <>
             {view.turns.length>0&&<ReaderStage key={view.session.headTurnId}
-              sceneHintsJson={view.turns.at(-1)?.sceneHintsJson??null}/>}
+              sceneHintsJson={view.turns[view.turns.length-1]?.sceneHintsJson??null}/>}
             <div className="ebr-reader-paper">
               {view.turns.length===0?<div className="ebr-reader-empty">
                 <h2>Trang đầu còn trắng</h2>
