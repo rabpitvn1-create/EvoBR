@@ -3,6 +3,7 @@
  * not a publication coordinator. Only P5 can atomically write Reader tables.
  */
 import type { AIConfig,WorkspaceScope } from '../types'
+import { db } from '../db/schema'
 import { appendAgentRunEventV1 } from '../agent/run/event-store'
 import { recordAgentRunArtifactV1 } from '../memory/artifact-store'
 import { hashCanonicalValue,canonicalStringify } from '../agent/run/hash'
@@ -114,6 +115,17 @@ export async function generateReaderTurnCandidateV1(input:{
     inputBudgetTokens:input.inputBudgetTokens,maxBaselineBytes:input.maxBaselineBytes,
   })
   await assertReaderContextCurrentV1(input.workspace,frozen)
+  // Only a choice actually offered at this Reader head may steer prose.
+  // P5 will recheck it atomically; this preflight does not perform publication.
+  if(input.selectedDecisionText != null){
+    const head=frozen.scope.headTurnId
+    if(head==null||!input.selectedDecisionText.trim())fail('selected Reader choice missing from published head')
+    const origin=await db.readerTurns.get(head)
+    if(!origin||origin.projectId!==input.workspace.projectId)fail('selected Reader head is not published')
+    const choices=await db.readerChoices.where('turnId').equals(head).toArray()
+    if(!choices.some(c=>c.sessionId===origin.sessionId&&c.status==='available'&&
+      c.text===input.selectedDecisionText))fail('selected choice does not belong to current reader head')
+  }
   const resolution=resolveFrozenReaderModelV1(input.config)
   const handle=await createReaderDurableRunV1({
     scope:input.workspace,frozen,
