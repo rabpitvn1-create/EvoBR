@@ -43,7 +43,7 @@ No reader candidate is rendered as *published* before atomic commit. The stream 
 | --- | --- | --- |
 | A. Request lookup | Reader Coordinator (new) | Read committed receipt by `sessionId+requestKey` first. Same intent fingerprint replays committed result without model call; mismatch rejects. |
 | B. Scope/lineage authorization | Reader Coordinator (new) | Validate session, Work, Canon baseline, source turn reachable in lineage and is head, chosen choice belongs to source turn; opening uses empty-session exception. |
-| C. Readiness | Reader Context (new) | Reconstruct pinned Canon baseline **before any model request**; unavailable → stop generation. Verify required continuity memory ready. Only `confirmed` reader facts/knowledge on allowed lineage can be read. |
+| C. Readiness | Reader Context (new) | Reconstruct pinned Canon baseline **before any model request**; unavailable → stop generation. Verify continuity by exact published lineage text and decisions when these fit budget; if compression is required, verify a ready summary for an exact prefix and full-text suffix. Do not require auxiliary summary indexing when exact continuity suffices. Only `confirmed` reader facts/knowledge on allowed lineage can be read. |
 | D. Reservation and snapshot | Durable run + Reader Coordinator | Record attempt; freeze decision, revision, expected head, baseline, lineage, source provenance and context manifest. Distinct request keys from the same head may generate candidates concurrently (optimistic concurrency, no pre-generation head lease). Only commit-time CAS can select the winner; the losing candidate is stale conflict evidence and must never be reused to commit after the head advances. |
 | E. Prose generation | Formal AI entry (existing), reader adapter (new) | Build Vietnamese messages and durable **prose-only** candidate. No writes to published reader tables. Empty/invalid prose is not publishable. |
 | F. Reader prose validation | New | Validate prose language, nonempty output, boundary, trusted metadata and candidate text hash. Choice validation occurs **after** final prose is frozen. |
@@ -51,7 +51,7 @@ No reader candidate is rendered as *published* before atomic commit. The stream 
 | G2. Final-prose choices | New registered AI step and reader-specific verifier | Generate choices only from V3-approved prose, validate verbatim evidence anchors and semantic coherence, reject unsuitable branches; inject Continue if none remain and it is legal. Choice evidence is bound to `finalProseHash`. |
 | H. Precommit evidence | Publication Gate (new) | Verify final prose/Gateway manifest hashes, V3 artifact/evidence, choice-source and choice-coherence hashes, run/budget constraints and scope fingerprint. Reader-specific binding must not claim the chapter `commitProseGenerationAdoptionV1` is reusable unchanged. |
 | I. Atomic commit | Reader Commit Coordinator (new) | In one Dexie transaction, re-read session head/revision/request key and lineage eligibility, CAS progress, write turn/choices/decision/receipt through registered targets; *any* skip/short write/conflict throws and rolls back. |
-| J. Postcommit | Reader memory saga (new) | Start derived continuity/facts/retrieval settlement from the published turn. Partial states have named recovery and cannot rewrite published prose. Next generation waits for required memory readiness. |
+| J. Postcommit | Reader memory saga (new) | Start derived continuity/facts/retrieval settlement from the published turn. Partial states have named recovery and cannot rewrite published prose. Next generation waits only when exact published continuity cannot fit and a verified summary prefix is unavailable. Derived facts/retrieval failures do not block when the exact required continuity is available. |
 | K. Reader presentation | Reader UI (P6) | Display only committed prose/choices read back by receipt. Retry/recovery is a reader-visible error, never a fabricated success. |
 
 Precommit checks are insufficient for concurrency: Stage I MUST independently recheck head/revision and unique request identity within the same transaction. Model and review callbacks MUST execute outside it.
@@ -81,7 +81,7 @@ Suggested commit choreography, to be validated against actual adoption results i
 | V3 review blocks or fails parse/evidence | Reject candidate, bounded retry; never auto-accept | Review events retained |
 | CAS skip, FK failure or incomplete adopt in transaction | Throw and rollback; retry with fresh state, not same candidate blindly | No committed publication receipt |
 | Commit succeeded but response lost | Re-read receipt and return same committed result | Receipt is in same transaction as turn |
-| Postcommit memory or retrieval failure | Published turn remains; record named partial memory state; block generation until required memory ready | Saga recovery evidence retained |
+| Postcommit memory or retrieval failure | Published turn remains; record named partial state; permit continuation from verified full-text lineage if it fits, otherwise block until an eligible summary prefix is ready | Saga recovery evidence retained |
 
 D2: retry budget is finite, configurable, and **no numeric default is prescribed until P1**. Each attempt has durable evidence. A retry of the same logical request after a recoverable transport problem must first look for receipt, then resume/resolve existing attempt when possible; a new model attempt is only allowed after establishing no commit.
 
@@ -116,9 +116,10 @@ Proposed paths are not claims of existing files. Existing authoring UI, manual c
 11. Candidate/retracted facts or knowledge: excluded from generation context.
 12. Semantic V3 quote forgery, missing hash or final blocked verdict: no choice model call and no commit.
 13. V3 revises the scene: choices are generated from the revised prose hash only; stale earlier choices cannot publish.
-14. Memory settlement failure: turn remains committed, next generation blocked until required continuity ready; retry saga does not duplicate facts.
-15. Refresh during any durable phase: no unauthorized visible published text and no duplicate receipt.
-16. Imported/restored nested fork: parent lineage/choice/receipt references still resolve, otherwise restore rolls back.
+14. Full exact continuity fits context budget while auxiliary memory is pending: next turn may start with verified full text and decision history. If it does not fit, missing/stale summary blocks before model.
+15. Memory settlement failure: turn remains committed, next generation blocked until required continuity ready; retry saga does not duplicate facts.
+16. Refresh during any durable phase: no unauthorized visible published text and no duplicate receipt.
+17. Imported/restored nested fork: parent lineage/choice/receipt references still resolve, otherwise restore rolls back.
 
 ## 8. Superseded/remaining P0 decisions
 
