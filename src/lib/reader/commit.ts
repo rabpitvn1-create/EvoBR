@@ -60,7 +60,7 @@ export async function prepareReaderCommitV1(input:Omit<ReaderPreparedCommitV1,
   // All SHA operations occur before opening the outer write transaction.
   const [contentHash,sessionCasHash]=await Promise.all([
     sha256Text(input.candidate.finalProse),
-    hashAdoptRecordFieldsV1(session,READER_SESSION_CAS_FIELDS_V1),
+    hashAdoptRecordFieldsV1({...session},READER_SESSION_CAS_FIELDS_V1),
   ])
   return {...input,contentHash,sessionCasHash}
 }
