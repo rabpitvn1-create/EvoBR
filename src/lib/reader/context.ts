@@ -127,7 +127,7 @@ function decisionRows(records: VerifiedReaderRecordsV1['decisions']) {
     resultTurnId:d.resultTurnId,choiceId:d.choiceId,choiceKey:d.choiceKey,
     choiceText:d.choiceText,requestKey:d.requestKey}))
 }
-async function prefixProof(
+export async function readerPrefixProofV1(
   turns: ReaderTurnV1[], decisions: VerifiedReaderRecordsV1['decisions'],
 ): Promise<{lineageFingerprint:string;sourceTextHash:string}> {
   const prefix = turns.map(t=>({id:t.id,sessionId:t.sessionId,contentHash:t.contentHash}))
@@ -151,7 +151,7 @@ async function selectSummary(
     const last = lineage.turns[prefixLength-1]
     const rows = eligible.filter(row=>row.throughTurnId===last.id)
     if (!rows.length) continue
-    const proof = await prefixProof(lineage.turns.slice(0,prefixLength),records.decisions)
+    const proof = await readerPrefixProofV1(lineage.turns.slice(0,prefixLength),records.decisions)
     for (const row of rows) {
       if (row.lineageFingerprint===proof.lineageFingerprint &&
         row.sourceTextHash===proof.sourceTextHash) {
@@ -161,6 +161,17 @@ async function selectSummary(
   }
   return null
 }
+/** Deterministic provenance window used by memory saga and compression. */
+export async function readerMemoryWindowProofV1(
+  workspace:WorkspaceScope,sessionId:number,throughTurnId:number,
+):Promise<{lineageFingerprint:string;sourceTextHash:string;scope:ReaderContextScopeV1}> {
+  const lineage=await resolveReaderLineageV1(workspace,sessionId)
+  const pos=lineage.turns.findIndex(t=>t.id===throughTurnId)
+  if(pos<0)fail('memory window is outside effective lineage')
+  const records=await collectRecords(lineage)
+  return {...await readerPrefixProofV1(lineage.turns.slice(0,pos+1),records.decisions),scope:lineage.scope}
+}
+
 function serialize(value: unknown): string { return JSON.stringify(value) }
 function makeContents(
   lineage: ReaderVisibleLineageV1, records: VerifiedReaderRecordsV1,
