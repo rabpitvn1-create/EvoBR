@@ -218,7 +218,7 @@ describe('P4 Reader V01-V13 governed generation',()=>{
     const {scope,sid}=await fixture(),{frozen}=await frozenHandle(scope,sid)
     const messages=buildReaderProseMessagesV1(frozen,null)
     expect(READER_PROSE_SYSTEM_PROMPT_V1).toContain('Cao Minh')
-    expect(READER_PROSE_SYSTEM_PROMPT_V1).toContain('Nội')
+    expect(READER_PROSE_SYSTEM_PROMPT_V1).toContain('nội tâm')
     expect(messages[0].content).toContain('CHỈ ĐẠO GIỌNG VĂN')
     expect(messages[1].content).toContain('Chỉ văn xuôi tiếng Việt')
     const original=buildProseGenerationRunContractV1({
