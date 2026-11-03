@@ -642,6 +642,7 @@
     "src/lib/prose/system-fiction-contract.ts",
     "src/lib/reader/baseline.ts",
     "src/lib/reader/choices.ts",
+    "src/lib/reader/commit.ts",
     "src/lib/reader/confirmation.ts",
     "src/lib/reader/context.ts",
     "src/lib/reader/gateway-sources.ts",
@@ -651,6 +652,8 @@
     "src/lib/reader/memory-saga.ts",
     "src/lib/reader/model.ts",
     "src/lib/reader/prose.ts",
+    "src/lib/reader/publication.ts",
+    "src/lib/reader/recovery.ts",
     "src/lib/reader/run.ts",
     "src/lib/reader/semantic-review.ts",
     "src/lib/reference-analysis/derived-agent-baseline.ts",
@@ -689,6 +692,7 @@
     "src/lib/style/style-learning.ts",
     "src/lib/theme-bootstrap.ts",
     "src/lib/theme.ts",
+    "src/lib/types.ts",
     "src/lib/types/agent-run.ts",
     "src/lib/types/agent-session.ts",
     "src/lib/types/ai.ts",
@@ -20323,6 +20327,43 @@
         }
       ]
     },
+    "src/lib/reader/commit.ts": {
+      "parent": "src/lib/reader/recovery.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/ai/chapter-memory/text-normalization.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/generation.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/publication.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/publication.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/registry/adopt.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/workspace/scope.ts",
+          "kind": "module"
+        }
+      ]
+    },
     "src/lib/reader/confirmation.ts": {
       "parent": "src/lib/reader/context.ts",
       "dependencies": [
@@ -20382,6 +20423,18 @@
         {
           "path": "src/lib/reader/memory-saga.ts",
           "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/publication.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/recovery.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/recovery.ts",
+          "kind": "type"
         },
         {
           "path": "src/lib/registry/assemble-context.ts",
@@ -20593,6 +20646,80 @@
         {
           "path": "src/lib/types/index.ts",
           "kind": "type"
+        }
+      ]
+    },
+    "src/lib/reader/publication.ts": {
+      "parent": "src/lib/reader/context.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/agent/run/hash.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/baseline.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/generation.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/reader/lineage.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/workspace/scope.ts",
+          "kind": "module"
+        }
+      ]
+    },
+    "src/lib/reader/recovery.ts": {
+      "parent": "src/lib/reader/context.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/commit.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/context.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/generation.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/memory-saga.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/prose.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/publication.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/workspace/scope.ts",
+          "kind": "module"
         }
       ]
     },
