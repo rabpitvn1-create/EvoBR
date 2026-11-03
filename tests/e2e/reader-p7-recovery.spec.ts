@@ -60,6 +60,7 @@ for(const interrupted of ['reader-prose','reader-v3-review','reader-choices','re
       })})
     })
     await page.goto('./reader/'+scope.projectId+'/'+scope.workId)
+    await page.getByRole('button',{name:/Phiên đọc/}).click()
     await page.getByRole('button',{name:'+ Tạo mới'}).click()
     await reachedPromise
     const countBefore=stages.length
@@ -91,6 +92,7 @@ test('P11: pending request with existing atomic receipt recovers after refresh w
     })})
   })
   await page.goto('./reader/'+scope.projectId+'/'+scope.workId)
+  await page.getByRole('button',{name:/Phiên đọc/}).click()
   await page.getByRole('button',{name:'+ Tạo mới'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(1,{timeout:45_000})
   await expect(page.getByRole('button',{name:'Quan sát cánh cửa khép hờ'})).toBeEnabled()

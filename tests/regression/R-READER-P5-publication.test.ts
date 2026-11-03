@@ -80,7 +80,7 @@ describe('P5 Reader publication gate P01-P13',()=>{
     fakeProvider(output)
     const published=await publishReaderTurnV1(request(scope,opening(sid)))
     const stored=await db.readerTurns.get(published.receipt.resultTurnId)
-    expect(stored?.sceneHintsJson).toBe('{"levelId":"level-0","entityIds":["brownie"]}')
+    expect(stored?.sceneHintsJson).toBe('{"levelId":"level-0","entityIds":["brownies"]}')
     expect(published.turn.sceneHintsJson).toBe(stored?.sceneHintsJson)
     expect(await db.readerPublicationRuns.count()).toBe(1)
   })
