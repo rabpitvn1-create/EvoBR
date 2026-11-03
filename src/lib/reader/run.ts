@@ -218,14 +218,15 @@ export async function finishReaderModelStepV1(input:{
 }
 export async function failReaderModelStepV1(
   handle:ReaderRunHandleV1,stepId:ReaderStepV1,attempt:number,error:unknown,
+  retryable=false,
 ):Promise<void>{
   const reason=error instanceof Error?error.message:String(error)
   const record=[...handle.records].reverse().find(x=>x.stepId===stepId&&x.attempt===attempt)
   if(record)record.error=reason.slice(0,400)
   if(handle.snapshot.projection.steps[stepId]?.status==='running'){
     await runEvent(handle,'step.failed',{
-      stepId,attempt,code:'reader_model_or_validation_failed',retryable:false,
-      category:'protocol',action:'fail',
+      stepId,attempt,code:'reader_model_or_validation_failed',retryable,
+      category:retryable?'deterministic':'protocol',action:retryable?'retry':'fail',
     })
   }
 }
