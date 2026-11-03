@@ -17,8 +17,7 @@ const hash = x => createHash('sha256').update(x).digest('hex')
 const outJson = value => JSON.stringify(value, null, 2) + '\n'
 const readJson = async path => JSON.parse(await readFile(path, 'utf8'))
 const SCHEMA = 'evobr.reader-voice-tournament'
-const AUDIT_CODES = new Set(['named-canon', 'history-contradiction',
-  'forced-ending', 'fixed-premise', 'world-law', 'game-mechanics'])
+const AUDIT_CODES = new Set(['named-canon', 'history-contradiction', 'forced-ending'])
 const mean = values => values.length ? values.reduce((a, b) => a + b, 0) / values.length : null
 const pctl = (numbers, frac) => {
   if (!numbers.length) return null
