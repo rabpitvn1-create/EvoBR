@@ -126,11 +126,14 @@ describe('P2 persistent reader contract D01–D06/D08–D09', () => {
     await db.readerChoices.add(choice)
     await expect(db.readerChoices.add(choice)).rejects.toThrow()
     expect((await db.readerChoices.where('turnId').equals(a).first())?.status).toBe('available')
+    await expect(db.readerTurns.update(a, { content: 'Tampered prose' })).rejects.toThrow(/immutable/)
+    const recordedChoice = await db.readerChoices.where('turnId').equals(a).first()
+    await expect(db.readerChoices.update(recordedChoice!.id!, { text: 'Tampered choice' })).rejects.toThrow(/immutable/)
+    expect((await db.readerTurns.get(a))?.content).not.toBe('Tampered prose')
     for (const name of ['readerTurns', 'readerChoices', 'readerPublicationRuns']) {
       expect(ADOPTION_BY_TARGET.get(name)?.duplicatePolicy).toBe('error')
     }
-    // P5 is responsible for checking that no direct DB update path can mutate
-    // published rows; unique indexes do not falsely prove that stronger claim.
+    // P5 must still prove atomic insert/CAS and receipt integrity across tables.
   })
 
   it('D05: archive preserves referenced ancestors and child pointers instead of destructive deletion', async () => {
