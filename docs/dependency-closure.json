@@ -20413,6 +20413,10 @@
           "kind": "module"
         },
         {
+          "path": "src/lib/ai/chapter-memory/text-normalization.ts",
+          "kind": "module"
+        },
+        {
           "path": "src/lib/db/schema.ts",
           "kind": "module"
         },
