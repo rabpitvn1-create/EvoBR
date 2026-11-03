@@ -100,6 +100,27 @@ test('P6: static stage clips background, keeps actors outside, hides missing hin
         content,contentHash:await sha256Text(content),status:'published',
         sceneHintsJson,createdAt:Date.now(),
       })
+      const choiceId=await db.readerChoices.add({
+        projectId:scope.projectId,sessionId:id,turnId,choiceKey:'continue',
+        kind:'continue',text:'Đọc tiếp',order:0,status:'available',createdAt:Date.now(),
+      })
+      const receipt={
+        version:1,sessionId:id,requestKey:'visual-test-'+id,
+        requestFingerprint:'a'.repeat(64),runId:1,candidateHash:'b'.repeat(64),
+        contextManifestHash:'c'.repeat(64),semanticArtifactHash:'d'.repeat(64),
+        expectedRevision:0,previousHeadTurnId:null,resultTurnId:turnId,
+        resultRevision:1,contentHash:await sha256Text(content),
+        choices:[{id:choiceId,choiceKey:'continue',kind:'continue',text:'Đọc tiếp'}],
+        decisionId:null,
+      }
+      await db.readerPublicationRuns.add({
+        projectId:scope.projectId,sessionId:id,requestKey:receipt.requestKey,runId:1,
+        candidateHash:receipt.candidateHash,requestFingerprint:receipt.requestFingerprint,
+        contextManifestHash:receipt.contextManifestHash,
+        semanticArtifactHash:receipt.semanticArtifactHash,expectedSessionRevision:0,
+        resultTurnId:turnId,receiptJson:JSON.stringify(receipt),status:'committed',
+        createdAt:Date.now(),
+      })
       await db.readerSessions.update(id,{headTurnId:turnId,revision:1})
       return id
     }
