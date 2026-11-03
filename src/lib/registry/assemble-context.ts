@@ -25,6 +25,10 @@ export {
   retryReaderMemoryTaskV1, inspectReaderMemorySagaV1,
 } from '../reader/context'
 
+// The P4 Reader candidate entry shares this governed Gateway boundary.
+// Exporting it does not activate generation in the chapter editor.
+export { generateReaderTurnCandidateV1, verifyReaderGenerationCandidateV1 } from '../reader/generation'
+
 // CTXG contracts share the existing assembleContext/CONTEXT_SOURCES boundary.
 // Re-exporting keeps callers away from a parallel context entrypoint.
 export {
