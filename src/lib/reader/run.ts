@@ -116,7 +116,7 @@ export async function createReaderDurableRunV1(input:{
       {id:'reader.v3-semantic-review',kind:'semantic-review',required:true},
     ],
     verificationPlan:[{
-      id:'reader.prepublication',kind:'semantic',
+      id:'reader.prepublication',kind:'terminal',
       verifier:'reader-v3-choice-sealed-v1',
       criterionIds:['reader.candidate','reader.v3-semantic-review'],
     }],
