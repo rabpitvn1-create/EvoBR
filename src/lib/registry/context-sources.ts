@@ -6,7 +6,7 @@
  */
 
 import { db } from '../db/schema'
-import { READER_SOURCE_KEYS_V1, readReaderFrozenSourceV1 } from '../reader/gateway-sources'
+import { readReaderFrozenSourceV1 } from '../reader/gateway-sources'
 
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
 import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outline-walk'
@@ -797,16 +797,76 @@ async function readCharacterPassages(projectId: number, name?: string, worldGrou
 export const CONTEXT_SOURCES: ContextSource[] = [
   // P3 reader sources: only the already-authorized session snapshot can supply
   // these values. Direct Work/Chapter reads are never used by any reader key.
-  ...READER_SOURCE_KEYS_V1.map((key): ContextSource => ({
-    key,
-    label: key,
+  {
+    key: 'reader.baseline',
+    label: 'Reader baseline',
     scope: 'manual',
     layer: 'L0',
     budgetTokens: 1_000_000,
     protectedFromTrim: true,
     atomic: true,
-    read: input => readReaderFrozenSourceV1(input, key),
-  })),
+    read: input => readReaderFrozenSourceV1(input, 'reader.baseline'),
+  },
+  {
+    key: 'reader.published-history',
+    label: 'Reader published-history',
+    scope: 'manual',
+    layer: 'L0',
+    budgetTokens: 1_000_000,
+    protectedFromTrim: true,
+    atomic: true,
+    read: input => readReaderFrozenSourceV1(input, 'reader.published-history'),
+  },
+  {
+    key: 'reader.decisions',
+    label: 'Reader decisions',
+    scope: 'manual',
+    layer: 'L0',
+    budgetTokens: 1_000_000,
+    protectedFromTrim: true,
+    atomic: true,
+    read: input => readReaderFrozenSourceV1(input, 'reader.decisions'),
+  },
+  {
+    key: 'reader.confirmed-facts',
+    label: 'Reader confirmed-facts',
+    scope: 'manual',
+    layer: 'L0',
+    budgetTokens: 1_000_000,
+    protectedFromTrim: true,
+    atomic: true,
+    read: input => readReaderFrozenSourceV1(input, 'reader.confirmed-facts'),
+  },
+  {
+    key: 'reader.confirmed-knowledge',
+    label: 'Reader confirmed-knowledge',
+    scope: 'manual',
+    layer: 'L0',
+    budgetTokens: 1_000_000,
+    protectedFromTrim: true,
+    atomic: true,
+    read: input => readReaderFrozenSourceV1(input, 'reader.confirmed-knowledge'),
+  },
+  {
+    key: 'reader.continuity',
+    label: 'Reader continuity',
+    scope: 'manual',
+    layer: 'L0',
+    budgetTokens: 1_000_000,
+    protectedFromTrim: true,
+    atomic: true,
+    read: input => readReaderFrozenSourceV1(input, 'reader.continuity'),
+  },
+  {
+    key: 'reader.retrieval',
+    label: 'Reader retrieval',
+    scope: 'manual',
+    layer: 'L0',
+    budgetTokens: 1_000_000,
+    protectedFromTrim: true,
+    atomic: true,
+    read: input => readReaderFrozenSourceV1(input, 'reader.retrieval'),
+  },
 
 {
     // ARCH-05: immutable WorldReference resource provider. Ordinary
