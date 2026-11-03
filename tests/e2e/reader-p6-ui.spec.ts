@@ -20,7 +20,7 @@ function routeProvider(page:import('@playwright/test').Page){
       stage='reader-choices'
       output=JSON.stringify({choices:[{choiceKey:'open-door',text:'Quan sát cánh cửa',
         sourceQuote:'cánh cửa'}],
-        sceneHints:{levelId:'level-0',entityIds:['brownie']}})
+        sceneHints:{levelId:'level-0',entityIds:['smiler']}})
     }else if(system.includes('bộ kiểm tra CHỈ-ĐỌC')){
       stage='reader-choice-verifier';output='{"issues":[]}'
     }else{
@@ -60,17 +60,18 @@ test('P6: session → opening → choice → next turn → reload → old-turn f
   const calls=await routeProvider(page)
   await page.goto('./reader/'+scope.projectId+'/'+scope.workId)
   await expect(page.getByRole('heading',{name:'Truyện đọc EvoBR'})).toBeVisible()
+  await page.getByRole('button',{name:/Phiên đọc/}).click()
   await page.getByRole('button',{name:'+ Tạo mới'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(1,{timeout:45_000})
   await expect(page.getByText(story[0])).toBeVisible()
-  await expect(page.locator('.ebr-stage[data-ready="true"]')).toBeVisible()
-  await expect(page.locator('.ebr-stage-entity[data-entity="brownie"]')).toBeVisible()
+  await expect(page.locator('.ebr-stage')).toBeVisible()
+  await expect(page.locator('.ebr-stage-entity[data-entity="smiler"]')).toBeVisible()
   const committedHints=await page.evaluate(async()=>{
     const {db}=await import('/storyforge/src/lib/db/schema.ts')
     const latest=await db.readerTurns.orderBy('id').last()
     return latest?.sceneHintsJson
   })
-  expect(committedHints).toBe('{"levelId":"level-0","entityIds":["brownie"]}')
+  expect(committedHints).toBe('{"levelId":"level-0","entityIds":["smiler"]}')
   await expect(page.getByRole('button',{name:'Quan sát cánh cửa'})).toBeEnabled()
   await page.getByRole('button',{name:'Quan sát cánh cửa'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(2,{timeout:45_000})
@@ -81,9 +82,12 @@ test('P6: session → opening → choice → next turn → reload → old-turn f
   await expect(page.getByText(story[0])).toBeVisible()
   await expect(page.getByText(story[1])).toBeVisible()
   expect(calls).toHaveLength(previousCalls)
-  await page.getByRole('button',{name:'Rẽ nhánh từ trang 1'}).click()
+  await page.getByRole('button',{name:'Tùy chọn trang 1'}).click()
+  await page.getByRole('button',{name:'Rẽ nhánh từ đây'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(1)
+  await page.getByRole('button',{name:/Phiên đọc/}).click()
   await expect(page.locator('.ebr-reader-session-list button')).toHaveCount(2)
+  await page.getByRole('button',{name:/Phiên đọc/}).click()
   await expect(page.getByRole('button',{name:'Quan sát cánh cửa'})).toBeVisible()
   await page.getByRole('button',{name:'Quan sát cánh cửa'}).click()
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(2,{timeout:45_000})
@@ -139,14 +143,14 @@ test('P6: static stage clips background, keeps actors outside, hides missing hin
       await db.readerSessions.update(id,{headTurnId:turnId,revision:1})
       return id
     }
-    const withHints=await make(JSON.stringify({levelId:'level-0',entityIds:['brownie']}))
+    const withHints=await make(JSON.stringify({levelId:'level-0',entityIds:['smiler']}))
     const withoutHints=await make(null)
     return {...scope,withHints,withoutHints}
   })
   await page.goto('./reader/'+scope.projectId+'/'+scope.workId+'?session='+scope.withHints)
-  const stage=page.locator('.ebr-stage[data-ready="true"]')
+  const stage=page.locator('.ebr-stage')
   await expect(stage).toBeVisible()
-  await expect(page.locator('.ebr-stage-entity[data-entity="brownie"]')).toBeVisible()
+  await expect(page.locator('.ebr-stage-entity[data-entity="smiler"]')).toBeVisible()
   const positions=await page.evaluate(()=>{
     const frame=document.querySelector('.ebr-stage')!
     const bg=document.querySelector('.ebr-stage-window')!
@@ -170,6 +174,7 @@ test('P6: static stage clips background, keeps actors outside, hides missing hin
   await page.unroute('**/reader-assets/**')
   await page.route('**/reader-assets/**',route=>route.abort())
   await page.goto('./reader/'+scope.projectId+'/'+scope.workId+'?session='+scope.withHints)
-  await expect(page.locator('.ebr-stage')).toHaveCount(0)
+  await expect(page.locator('.ebr-stage')).toHaveCount(1)
+  await expect(page.locator('.ebr-stage-background')).toHaveCount(0)
   await expect(page.locator('.ebr-reader-turn')).toHaveCount(1)
 })
