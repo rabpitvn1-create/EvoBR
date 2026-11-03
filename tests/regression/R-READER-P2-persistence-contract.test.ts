@@ -15,7 +15,7 @@ import { stampCurrentFixtureResourceUidsV1 } from '../helpers/current-resource-i
 import { deriveImportProjectJSON } from '../../src/lib/export/registry-import'
 import {
   createRootReaderSessionV1, captureReaderCanonBaselineV1, verifyReaderCanonBaselineV1,
-  forkReaderSessionV1, archiveReaderSessionV1,
+  forkReaderSessionV1, archiveReaderSessionV1, assertReaderParentTurnV1,
 } from '../../src/lib/reader/baseline'
 import type { WorkspaceScope } from '../../src/lib/types/world-ownership'
 import { cascadeDeleteProject } from '../../src/lib/registry/lifecycle'
@@ -128,6 +128,8 @@ describe('P2 persistent reader contract D01–D06/D08–D09', () => {
     expect(firstFacts.map(f => f.valueJson)).toEqual(['"on"'])
     expect(secondFacts.map(f => f.valueJson)).toEqual(['"off"'])
     await expect(forkReaderSessionV1(scope, first.root, second.a)).rejects.toThrow(/fork cutoff/)
+    await expect(assertReaderParentTurnV1(scope, first.root, second.a)).rejects.toThrow(/parent turn must match/)
+    await expect(assertReaderParentTurnV1(scope, first.root, first.b)).resolves.toBeUndefined()
     const other = await seedCurrentWorkspace('Different reader Work')
     await expect(forkReaderSessionV1(other.scope, first.root, first.a)).rejects.toThrow(/foreign parent/)
   })
