@@ -31,7 +31,7 @@ To avoid a mutable choice status and protect D4, publication never disables or c
 
 ## 2. Reader output contract
 
-AI may propose a structured payload: `{ prose, choices, sceneHints? }`. `prose` is a nonempty complete Vietnamese narrative passage. `choices` is an ordered array of `{choiceKey,text,kind:'branch'}` (no AI-issued `continue` privileged action). Coordinator validates syntax, count/length caps and stable unique keys, then creates a trusted `continue` option only when zero eligible branch choices remain after validation, not merely when the raw array is empty. A structurally malformed root output fails closed; individually rejected branch entries are excluded from the published set. `sceneHints` is optional and non-authoritative. Exact limits belong to the P4 adapter policy and are versioned; not guessed in this specification.
+**P0.3 resolved output sequence:** The reader generator produces Vietnamese prose only. The prose passes deterministic validation and the V3 review/revise/rereview cycle. Only after `finalProseHash` is frozen does a separate governed choice-generation step produce branch choices grounded in that final prose. Each proposed branch carries a `sourceQuote` that must occur verbatim in the frozen prose; a reader-specific semantic coherence verifier then checks candidate choices against the final scene. The final publication envelope is `{ prose: finalProse, choices: validatedChoices, sceneHints? }`, not the raw model response. If zero usable branch options remain **after validation**, coordinator creates one real `kind:'continue'` choice. If the root response is malformed, fail closed. `sceneHints` is optional, non-authoritative. No choice generated from pre-revision prose may be published. Versioned limits and reader budget account for choice generation and verifier calls. See [P0.3](./03-v3-production-wiring.md).
 
 The model cannot provide `sessionId`, table IDs, `status`, Canon authority, publication receipt or confirmed fact rows. All persisted `readerDecisions` and `readerPublicationRuns` fields are derived from trusted inputs and verified candidate artifacts.
 
@@ -45,10 +45,11 @@ No reader candidate is rendered as *published* before atomic commit. The stream 
 | B. Scope/lineage authorization | Reader Coordinator (new) | Validate session, Work, Canon baseline, source turn reachable in lineage and is head, chosen choice belongs to source turn; opening uses empty-session exception. |
 | C. Readiness | Reader Context (new) | Reconstruct pinned Canon baseline **before any model request**; unavailable → stop generation. Verify required continuity memory ready. Only `confirmed` reader facts/knowledge on allowed lineage can be read. |
 | D. Reservation and snapshot | Durable run + Reader Coordinator | Record attempt; freeze decision, revision, expected head, baseline, lineage, source provenance and context manifest. Distinct request keys from the same head may generate candidates concurrently (optimistic concurrency, no pre-generation head lease). Only commit-time CAS can select the winner; the losing candidate is stale conflict evidence and must never be reused to commit after the head advances. |
-| E. Generation | Formal AI entry (existing), reader adapter (new) | Build Vietnamese messages and generate durable candidate. No writes to published reader tables. Output malformed/empty → not publishable. |
-| F. Reader deterministic validation | New | Parse structured prose/choice output, reject extra owner/authority fields, invalid language/empty prose/duplicates, verify source choice contract and candidate text hash. |
-| G. V3 semantic verification | Existing cycle + **new production wiring** | Run `runDurableProseSemanticReviewV1` with real injected review/revise callbacks, frozen reader packet and compatible information boundary. At most one local revision cycle. Revalidate structured payload and deterministic rules on the *final* revised output. `blocked` or evidence mismatch → no publication. |
-| H. Precommit evidence | Publication Gate (new) | Verify final candidate/Gateway manifest hashes, V3 artifact/evidence, run/budget constraints and scope fingerprint. Reader-specific binding must not claim the chapter `commitProseGenerationAdoptionV1` is reusable unchanged. |
+| E. Prose generation | Formal AI entry (existing), reader adapter (new) | Build Vietnamese messages and durable **prose-only** candidate. No writes to published reader tables. Empty/invalid prose is not publishable. |
+| F. Reader prose validation | New | Validate prose language, nonempty output, boundary, trusted metadata and candidate text hash. Choice validation occurs **after** final prose is frozen. |
+| G. V3 semantic review | Existing semantic cycle + **new reader durable wrapper** | Use provider-backed review/revise callbacks on frozen reader context. One local prose revision maximum. Revalidate final prose and freeze `finalProseHash`. Current durable wrapper requires chapterId; do not pass a fabricated chapter ID. `blocked` or evidence mismatch → no publication. |
+| G2. Final-prose choices | New registered AI step and reader-specific verifier | Generate choices only from V3-approved prose, validate verbatim evidence anchors and semantic coherence, reject unsuitable branches; inject Continue if none remain and it is legal. Choice evidence is bound to `finalProseHash`. |
+| H. Precommit evidence | Publication Gate (new) | Verify final prose/Gateway manifest hashes, V3 artifact/evidence, choice-source and choice-coherence hashes, run/budget constraints and scope fingerprint. Reader-specific binding must not claim the chapter `commitProseGenerationAdoptionV1` is reusable unchanged. |
 | I. Atomic commit | Reader Commit Coordinator (new) | In one Dexie transaction, re-read session head/revision/request key and lineage eligibility, CAS progress, write turn/choices/decision/receipt through registered targets; *any* skip/short write/conflict throws and rolls back. |
 | J. Postcommit | Reader memory saga (new) | Start derived continuity/facts/retrieval settlement from the published turn. Partial states have named recovery and cannot rewrite published prose. Next generation waits for required memory readiness. |
 | K. Reader presentation | Reader UI (P6) | Display only committed prose/choices read back by receipt. Retry/recovery is a reader-visible error, never a fabricated success. |
@@ -113,17 +114,18 @@ Proposed paths are not claims of existing files. Existing authoring UI, manual c
 9. Cross-session source turn not in ancestry, despite same Work: reject **before** model and at commit.
 10. Missing Canon baseline: no model call and no candidate.
 11. Candidate/retracted facts or knowledge: excluded from generation context.
-12. Semantic V3 quote forgery, missing hash or final blocked verdict: no commit.
-13. Memory settlement failure: turn remains committed, next generation blocked until required continuity ready; retry saga does not duplicate facts.
-14. Refresh during any durable phase: no unauthorized visible published text and no duplicate receipt.
-15. Imported/restored nested fork: parent lineage/choice/receipt references still resolve, otherwise restore rolls back.
+12. Semantic V3 quote forgery, missing hash or final blocked verdict: no choice model call and no commit.
+13. V3 revises the scene: choices are generated from the revised prose hash only; stale earlier choices cannot publish.
+14. Memory settlement failure: turn remains committed, next generation blocked until required continuity ready; retry saga does not duplicate facts.
+15. Refresh during any durable phase: no unauthorized visible published text and no duplicate receipt.
+16. Imported/restored nested fork: parent lineage/choice/receipt references still resolve, otherwise restore rolls back.
 
 ## 8. Superseded/remaining P0 decisions
 
 - This file supersedes P0.1's provisional `readerChoices` shape by adding required `kind:'branch'|'continue'`.
 - This file supersedes P0.1's provisional required `readerTurns.publicationRunId` to remove an unnecessary circular FK. Receipt→turn is sufficient; exact physical schema must reflect this in P2.
 - The `readerPublicationRuns` receipt must store the intent fingerprint; add a required `requestFingerprint` in the physical schema.
-- P0.3 must prove the adaptation boundary for V3 semantic artifacts without a false `chapters` target. **Prose-choice coupling:** a revision can alter the scene and invalidate choices generated from the original prose. P0.3 must choose an enforceable strategy: review prose and choices together, independently review choices after revision, or generate choices only from final approved prose. Deterministic JSON validation alone cannot establish semantic alignment.
+- **Resolved by P0.3:** V3 operates on prose only, using a reader-specific wrapper without a fake chapter. Choices are generated from **final V3-approved prose** and verified for grounding/coherence with separate governed evidence. Refer to [P0.3](./03-v3-production-wiring.md).
 - P0.4 must choose Canon baseline snapshot representation, branch memory projection and source eligibility; no default to Work current-state is permitted.
 - P0.5 must translate these contracts into an ordered file-level plan and tests, including deferred import pointer handling.
 
