@@ -20918,7 +20918,7 @@
         },
         {
           "path": "src/lib/reader/generation.ts",
-          "kind": "module"
+          "kind": "dynamic"
         },
         {
           "path": "src/lib/registry/context-sources.ts",
