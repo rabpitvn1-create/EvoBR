@@ -640,6 +640,8 @@
     "src/lib/prose/request-evidence.ts",
     "src/lib/prose/scene-craft.ts",
     "src/lib/prose/system-fiction-contract.ts",
+    "src/lib/reader/baseline.ts",
+    "src/lib/reader/import-integrity.ts",
     "src/lib/reference-analysis/derived-agent-baseline.ts",
     "src/lib/reference-analysis/derived-agent-plan.ts",
     "src/lib/reference-analysis/lifecycle.ts",
@@ -720,6 +722,7 @@
     "src/lib/types/project.ts",
     "src/lib/types/prompt.ts",
     "src/lib/types/rag-library.ts",
+    "src/lib/types/reader.ts",
     "src/lib/types/reference.ts",
     "src/lib/types/retrieval-chunk.ts",
     "src/lib/types/snapshot.ts",
@@ -16815,6 +16818,10 @@
           "kind": "type"
         },
         {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        },
+        {
           "path": "src/lib/types/retrieval-chunk.ts",
           "kind": "type"
         },
@@ -17281,6 +17288,10 @@
         },
         {
           "path": "src/lib/narrative-domain/references.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/import-integrity.ts",
           "kind": "module"
         },
         {
@@ -20215,6 +20226,48 @@
         }
       ]
     },
+    "src/lib/reader/baseline.ts": {
+      "parent": "src/lib/reader/import-integrity.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/registry/project-tables.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/types/reader.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/types/world-ownership.ts",
+          "kind": "type"
+        },
+        {
+          "path": "src/lib/workspace/scope.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/world-engine/release-hash.ts",
+          "kind": "module"
+        }
+      ]
+    },
+    "src/lib/reader/import-integrity.ts": {
+      "parent": "src/lib/export/registry-import.ts",
+      "dependencies": [
+        {
+          "path": "src/lib/db/schema.ts",
+          "kind": "module"
+        },
+        {
+          "path": "src/lib/reader/baseline.ts",
+          "kind": "module"
+        }
+      ]
+    },
     "src/lib/reference-analysis/derived-agent-baseline.ts": {
       "parent": "src/lib/registry/context-sources.ts",
       "dependencies": [
@@ -21817,6 +21870,10 @@
           "kind": "type"
         }
       ]
+    },
+    "src/lib/types/reader.ts": {
+      "parent": "src/lib/db/schema.ts",
+      "dependencies": []
     },
     "src/lib/types/reference.ts": {
       "parent": "src/lib/types/index.ts",
