@@ -62,6 +62,7 @@ export interface ReaderRunHandleV1 {
     inputTokens:number|null
     outputTokens:number|null
     latencyMs:number|null
+    requestLifecycle:{phase:'pre-dispatch'|'request-dispatched'|'response-observed';responseStatus:number|null}|null
     error:string|null
   }>
 }
@@ -179,7 +180,7 @@ export async function beginReaderModelStepV1(input:{
   handle.records.push({
     stepId,attempt,requestHash,responseHash:null,
     estimatedInputTokens,reservedOutputTokens:input.maxOutputTokens,
-    inputTokens:null,outputTokens:null,latencyMs:null,error:null,
+    inputTokens:null,outputTokens:null,latencyMs:null,requestLifecycle:null,error:null,
   })
   return {attempt,requestHash,startedAt:Date.now()}
 }
@@ -187,6 +188,7 @@ export async function finishReaderModelStepV1(input:{
   handle:ReaderRunHandleV1;stepId:ReaderStepV1;attempt:number
   output:string;startedAt:number
   inputTokens?:number|null;outputTokens?:number|null
+  requestLifecycle?:{phase:'pre-dispatch'|'request-dispatched'|'response-observed';responseStatus:number|null}
   artifactHash?:string
   complete?:boolean
 }):Promise<void>{
@@ -207,6 +209,7 @@ export async function finishReaderModelStepV1(input:{
   record.latencyMs=Date.now()-input.startedAt
   record.inputTokens=input.inputTokens??null
   record.outputTokens=input.outputTokens??null
+  record.requestLifecycle=input.requestLifecycle??null
   // Output may be semantic/verifier artifact hash, but must be bound to
   // the exact provider response already recorded above.
   if(input.complete!==false)await runEvent(handle,'step.succeeded',{
