@@ -6,7 +6,7 @@
 import { db } from '../db/schema'
 import type { WorkspaceScope } from '../types/world-ownership'
 import { resolveReaderLineageV1 } from './lineage'
-import type { ReaderFactV1, ReaderKnowledgeV1 } from '../types/reader'
+import type { ReaderFactV1 } from '../types/reader'
 
 function fail(message:string):never{throw Error('[readerConfirmation] '+message)}
 type FactLike=Pick<ReaderFactV1,'predicate'|'subjectRef'|'valueJson'>
