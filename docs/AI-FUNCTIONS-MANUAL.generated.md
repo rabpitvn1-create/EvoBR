@@ -80,10 +80,17 @@
 
 ## 二、上下文源清单（CONTEXT_SOURCES · AI 读什么）
 
-共 64 个上下文源。assembleContext({ sourceKeys }) 按 key 装配。
+共 71 个上下文源。assembleContext({ sourceKeys }) 按 key 装配。
 
 | key | 标签 | 作用域 | 层级 | 预算(token) |
 |---|---|---|---|---|
+| `reader.baseline` | Reader baseline | manual | L0 | 1000000 |
+| `reader.published-history` | Reader published-history | manual | L0 | 1000000 |
+| `reader.decisions` | Reader decisions | manual | L0 | 1000000 |
+| `reader.confirmed-facts` | Reader confirmed-facts | manual | L0 | 1000000 |
+| `reader.confirmed-knowledge` | Reader confirmed-knowledge | manual | L0 | 1000000 |
+| `reader.continuity` | Reader continuity | manual | L0 | 1000000 |
+| `reader.retrieval` | Reader retrieval | manual | L0 | 1000000 |
 | `worldRelease` | 冻结世界版本资源 | manual | L0 | 100000 |
 | `workStatus` | 作品概况 | project | L2 | 1200 |
 | `worldGroups` | 世界组目录 | project | L2 | 1500 |
