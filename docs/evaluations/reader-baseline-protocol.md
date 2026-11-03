@@ -1,5 +1,7 @@
 # P1 Vietnamese prose baseline: protocol and harness operation
 
+> **Post-run status, 2026-11-03:** Muse subsequently ran all four profiles (80 real requests) using the repository client, a local path-only relay and Nguyen's premium proxy, and completed the blind D10 review. The results and Vite transport fixes are documented in [reader-baseline-conclusion.md](./reader-baseline-conclusion.md). References below to **0/20**, missing model data or blocked execution describe the **assistant's earlier environment only**, not the final Muse-run outcome. The published benchmark records 0/80 request errors, 0 retries, and `restrained_intimate` as the winner. Cost remains unknown; do not overwrite historical environment evidence.
+
 **Status:** P1 baseline harness has passed Muse's part-1 review; subsequent Codex opt-in and four-voice tournament additions await review. **No real-provider execution has been completed in this environment.** Nguyen delegated the D10 literary decision to Muse on 2026-11-03. The fixed literary thresholds are recorded in [reader-d10-approval-draft.md](./reader-d10-approval-draft.md) before outcomes; Muse preregisters them before rating. Operational token/latency/cost limits are determined by Muse only from real measurements.
 
 ## 1. Scope and invariants
