@@ -19,7 +19,6 @@ export function resolveFrozenReaderModelV1(config:AIConfig):AIRequestConfigResol
 export async function callReaderModelV1(input:{
   handle:ReaderRunHandleV1
   stage:ReaderStepV1
-  caller:'src/lib/reader/generation.ts'|'src/lib/reader/semantic-review.ts'|'src/lib/reader/choices.ts'
   messages:ChatMessage[]
   resolution:AIRequestConfigResolution
   signal?:AbortSignal
@@ -28,13 +27,51 @@ export async function callReaderModelV1(input:{
   const id=readerStageEntryV1(input.stage)
   if(!binding?.formalEntry||binding.skillId!==id)throw Error('[readerModel] frozen entry binding missing')
   const result:ChatResult={}
-  const output=await executeFrozenFormalAIEntryV1(
-    id,binding.formalEntry,getAgentSkillV1(id,'prose'),
-    input.caller,input.messages,input.resolution.config,
-    {category:id,projectId:input.handle.scope.projectId,
-      contextOverflowPolicy:'reject',transportRetryPolicy:'none'},
-    input.signal,result,undefined,input.resolution,
-  )
+  let output:string
+  switch(input.stage){
+    case 'reader-prose':
+      output=await executeFrozenFormalAIEntryV1(
+        'reader.prose.generate',binding.formalEntry,getAgentSkillV1('reader.prose.generate','prose'),
+        'src/lib/reader/model.ts',input.messages,input.resolution.config,
+        {category:'reader.prose.generate',projectId:input.handle.scope.projectId,
+          contextOverflowPolicy:'reject',transportRetryPolicy:'none'},
+        input.signal,result,undefined,input.resolution)
+      break
+    case 'reader-v3-review':
+    case 'reader-v3-rereview':
+      output=await executeFrozenFormalAIEntryV1(
+        'reader.prose.review',binding.formalEntry,getAgentSkillV1('reader.prose.review','prose'),
+        'src/lib/reader/model.ts',input.messages,input.resolution.config,
+        {category:'reader.prose.review',projectId:input.handle.scope.projectId,
+          contextOverflowPolicy:'reject',transportRetryPolicy:'none'},
+        input.signal,result,undefined,input.resolution)
+      break
+    case 'reader-v3-revision':
+      output=await executeFrozenFormalAIEntryV1(
+        'reader.prose.revise',binding.formalEntry,getAgentSkillV1('reader.prose.revise','prose'),
+        'src/lib/reader/model.ts',input.messages,input.resolution.config,
+        {category:'reader.prose.revise',projectId:input.handle.scope.projectId,
+          contextOverflowPolicy:'reject',transportRetryPolicy:'none'},
+        input.signal,result,undefined,input.resolution)
+      break
+    case 'reader-choices':
+      output=await executeFrozenFormalAIEntryV1(
+        'reader.choices.generate',binding.formalEntry,getAgentSkillV1('reader.choices.generate','prose'),
+        'src/lib/reader/model.ts',input.messages,input.resolution.config,
+        {category:'reader.choices.generate',projectId:input.handle.scope.projectId,
+          contextOverflowPolicy:'reject',transportRetryPolicy:'none'},
+        input.signal,result,undefined,input.resolution)
+      break
+    case 'reader-choice-verifier':
+      output=await executeFrozenFormalAIEntryV1(
+        'reader.choices.review',binding.formalEntry,getAgentSkillV1('reader.choices.review','prose'),
+        'src/lib/reader/model.ts',input.messages,input.resolution.config,
+        {category:'reader.choices.review',projectId:input.handle.scope.projectId,
+          contextOverflowPolicy:'reject',transportRetryPolicy:'none'},
+        input.signal,result,undefined,input.resolution)
+      break
+    default:throw Error('[readerModel] unknown stage')
+  }
   return {text:output,usage:{
     inputTokens:result.usage?.inputTokens??null,
     outputTokens:result.usage?.outputTokens??null,
