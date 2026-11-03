@@ -402,8 +402,11 @@ const ADOPTION_SCHEMAS_RAW: CollectionAdoptionSpec[] = [
     target: 'readerMemory',
     identity: { kind: 'composite', fields: ['sessionId', 'throughTurnId'] },
     duplicatePolicy: 'error',
-    required: ['sessionId', 'throughTurnId', 'summary', 'continuityJson', 'sourceTextHash',
+    required: ['sessionId', 'throughTurnId', 'sourceTextHash',
       'lineageFingerprint', 'summaryPolicyVersion', 'status'],
+    // Failed/stale memory records may have no summary. A 'ready' memory's
+    // complete summary+continuity provenance is validated by P3's reader
+    // memory policy, never inferred from an adoption status string alone.
     ownerFrom: 'work', autoStamps: ['projectId', 'createdAt'],
     fkChecks: [
       { field: 'sessionId', target: 'readerSessions' },
