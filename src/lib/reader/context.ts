@@ -15,7 +15,7 @@ import type { WorkspaceScope } from '../types/world-ownership'
 import type { ReaderTurnV1, ReaderDecisionV1, ReaderMemoryV1 } from '../types/reader'
 import { resolveReaderLineageV1, type ReaderVisibleLineageV1 } from './lineage'
 import { assertReaderFactNonconflictingV1 } from './confirmation'
-import { READER_SOURCE_KEYS_V1, READER_SELECTION_POLICY_V1 } from './gateway-sources'
+import { READER_SOURCE_KEYS_V1 } from './gateway-sources'
 import { invalidateContextGatewayCacheV1 } from '../context-gateway/provider-cache'
 
 const MANDATORY_KEYS = new Set<string>([
