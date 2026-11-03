@@ -151,13 +151,14 @@ export async function beginReaderModelStepV1(input:{
 }):Promise<{attempt:number;requestHash:string;startedAt:number}>{
   const {handle,stepId}=input,attempt=input.attempt??1
   const binding=handle.snapshot.contract.executionBindings?.find(b=>b.stepId===stepId)
-  if(!binding||binding.skillId!==STEP_ENTRY[stepId]||handle.calls>=READER_MODEL_CALL_LIMIT_V1)
-    fail('missing frozen skill, or six-call limit reached')
+  if(!binding)throw Error('[readerDurable] missing frozen Skill binding')
+  if(binding.skillId!==STEP_ENTRY[stepId]||handle.calls>=READER_MODEL_CALL_LIMIT_V1)
+    throw Error('[readerDurable] invalid frozen Skill or six-call limit reached')
   if(!Number.isSafeInteger(attempt)||attempt<1||
     attempt>handle.snapshot.contract.budget.maxAttemptsPerStep)fail('step retry budget exceeded')
   const requestHash=await hashCanonicalValue({
     version:1,readerAttempt:handle.identity.attemptHash,
-    stepId,attempt,messages,
+    stepId,attempt,messages:input.messages,
     contextManifestHash:handle.frozen.contextManifestHash,
     formalEntry:binding.formalEntry,
   })
@@ -191,7 +192,8 @@ export async function finishReaderModelStepV1(input:{
 }):Promise<void>{
   const {handle,stepId,attempt}=input
   const record=[...handle.records].reverse().find(x=>x.stepId===stepId&&x.attempt===attempt)
-  if(!record||record.responseHash)fail('missing pending reader model request')
+  if(!record)throw Error('[readerDurable] missing pending reader model request')
+  if(record.responseHash)throw Error('[readerDurable] model response already recorded')
   const responseHash=await hashCanonicalValue(input.output)
   await runEvent(handle,'model.responded',{stepId,attempt,outputHash:responseHash})
   await runEvent(handle,'budget.settled',{stepId,modelCalls:1,toolCalls:0,
