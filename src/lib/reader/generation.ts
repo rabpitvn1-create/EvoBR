@@ -148,7 +148,7 @@ export async function generateReaderTurnCandidateV1(input:{
       originalProse=response.text
       await finishReaderModelStepV1({
         handle,stepId:READER_STEPS_V1.prose,attempt:started.attempt,
-        startedAt:started.startedAt,output:originalProse,complete:false,...response.usage,
+        startedAt:started.startedAt,output:originalProse,complete:false,...response.usage,requestLifecycle:response.requestLifecycle,
       })
       assertReaderVietnameseProseV1(originalProse)
       await completeReaderModelStepV1(handle,READER_STEPS_V1.prose,
