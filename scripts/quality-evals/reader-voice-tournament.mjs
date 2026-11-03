@@ -156,7 +156,7 @@ async function openTournament(dir) {
   }
   return { manifest, rows }
 }
-async function pack(tournamentDir, blindDir, participant = 'Muse') {
+export async function pack(tournamentDir, blindDir, participant = 'Muse') {
   if (!tournamentDir || !blindDir) throw Error('Usage: pack COMPLETED_TOURNAMENT_DIR NEW_BLIND_DIR [participant]')
   const { manifest, rows } = await openTournament(tournamentDir)
   const root = resolve(blindDir)
@@ -213,7 +213,7 @@ function verifyCanonAudit(audit, sampleCode, packet) {
   }
   return verdicts
 }
-async function rank(blindDir, scoringDir, output) {
+export async function rank(blindDir, scoringDir, output) {
   if (!blindDir || !scoringDir || !output) throw Error('Usage: rank BLIND_DIR SEALED_REVIEWS_DIR OUTPUT.json')
   const key = await readJson(join(resolve(blindDir), 'organizer-key.json'))
   if (key.schema !== 'evobr.reader-voice-organizer-key' || key.mapping?.length !== 4) {
