@@ -170,7 +170,7 @@ export async function generateReaderTurnCandidateV1(input:{
     const finalProseHash=await hashCanonicalValue(finalProse)
     // Only from this point may choices or their read-only verifier be called.
     const choices=await runReaderChoiceStageV1({
-      handle,finalProse,finalProseHash,resolution,
+      handle,finalProse,finalProseHash,v3,originalProse,resolution,
       maxChoiceRetries:retries,signal:input.signal,
     })
     if(!await verifyReaderChoicesReceiptV1(handle,choices,finalProse))
