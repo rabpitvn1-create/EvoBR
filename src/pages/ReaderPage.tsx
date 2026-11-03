@@ -14,6 +14,8 @@ import './reader.css'
 
 const MAX_BASELINE_BYTES=2_000_000
 const INPUT_BUDGET_TOKENS=120_000
+const recentSessionKey=(projectId:number,workId:number)=>'evobr-reader-last-v1:'+projectId+':'+workId
+const scrollKey=(projectId:number,workId:number,sessionId:number)=>'evobr-reader-scroll-v1:'+projectId+':'+workId+':'+sessionId
 function message(error:unknown):string {
   return error instanceof Error?error.message:String(error)
 }
@@ -49,6 +51,9 @@ export default function ReaderPage(){
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
   const [uncertain,setUncertain]=useState(false)
+  const [sessionPickerOpen,setSessionPickerOpen]=useState(false)
+  const [forkMenuTurnId,setForkMenuTurnId]=useState<number|null>(null)
+  const [readPositionReady,setReadPositionReady]=useState(false)
   const mounted=useRef(true)
   const inFlight=useRef(false)
   const refreshId=useRef(0)
@@ -67,7 +72,9 @@ export default function ReaderPage(){
     const listed=(await db.readerSessions.where('workId').equals(workId).toArray())
       .filter(item=>item.projectId===projectId)
       .sort((a,b)=>b.updatedAt-a.updatedAt)
-    const target=currentId===null?listed[0]?.id:null
+    const last=Number(localStorage.getItem(recentSessionKey(projectId,workId)))
+    const lastValid=listed.some(item=>item.id===last)?last:null
+    const target=currentId===null?(lastValid??listed[0]?.id??null):null
     const id=currentId??target??null
     if(currentId!==null&&!listed.some(s=>s.id===currentId))
       throw Error('Phiên đọc không thuộc tác phẩm này.')
@@ -75,6 +82,7 @@ export default function ReaderPage(){
       await readReaderPublishedViewV1(nextScope,id)
     if(!mounted.current||sequence!==refreshId.current)return
     setScope(nextScope);setWorkTitle(work.title);setSessions(listed);setView(next)
+    if(id!==null)localStorage.setItem(recentSessionKey(projectId,workId),String(id))
     if(currentId===null&&id!==null)selectSession(id)
   },[projectId,workId,selectSession])
 
@@ -111,6 +119,41 @@ export default function ReaderPage(){
     })()
     return ()=>{active=false;mounted.current=false;refreshId.current++}
   },[load,selectedSessionId,projectId,workId,selectSession])
+
+  // Restore the reading position only after receipt-backed turns are painted.
+  // A new head or session without a saved position starts at its published head.
+  useEffect(()=>{
+    const id=view?.session.id
+    if(!id||loading)return
+    setReadPositionReady(false)
+    let cancelled=false
+    const frame=requestAnimationFrame(()=>{
+      if(cancelled)return
+      const saved=Number(localStorage.getItem(scrollKey(projectId,workId,id)))
+      const maxScroll=Math.max(0,document.documentElement.scrollHeight-window.innerHeight)
+      if(Number.isFinite(saved)&&saved>0){
+        window.scrollTo(0,Math.min(saved,maxScroll))
+      }else{
+        const head=document.querySelector<HTMLElement>('[data-turn-id="'+view.session.headTurnId+'"]')
+        head?.scrollIntoView({block:'start'})
+      }
+      setReadPositionReady(true)
+    })
+    return ()=>{cancelled=true;cancelAnimationFrame(frame)}
+  },[view?.session.id,view?.session.headTurnId,loading,projectId,workId])
+
+  useEffect(()=>{
+    if(!readPositionReady||!view?.session.id)return
+    const sessionId=view.session.id
+    let frame=0
+    const remember=()=>{
+      cancelAnimationFrame(frame)
+      frame=requestAnimationFrame(()=>localStorage.setItem(
+        scrollKey(projectId,workId,sessionId),String(Math.max(0,window.scrollY))))
+    }
+    window.addEventListener('scroll',remember,{passive:true})
+    return ()=>{window.removeEventListener('scroll',remember);cancelAnimationFrame(frame)}
+  },[readPositionReady,view?.session.id,projectId,workId])
 
   const recheck=async()=>{
     if(!scope||inFlight.current)return
@@ -227,29 +270,40 @@ export default function ReaderPage(){
         disabled={busy}>Hủy trạng thái chờ</button>
     </div>}
     {!loading&&scope&&<div className="ebr-reader-layout">
-      <aside className="ebr-reader-sessions" aria-label="Danh sách phiên đọc">
-        <div className="ebr-reader-aside-heading">
-          <h2>Phiên đọc</h2>
-          <button type="button" onClick={()=>void create()} disabled={busy||uncertain}>+ Tạo mới</button>
-        </div>
-        {sessions.length===0&&<p>Chưa có phiên đọc. Bắt đầu một hành trình mới.</p>}
-        <div className="ebr-reader-session-list">
-          {sessions.map(session=><button type="button" key={session.id}
-            aria-current={session.id===view?.session.id?'true':undefined}
-            disabled={busy} onClick={()=>selectSession(session.id!)}>
-            <span>{session.parentSessionId===null?'Hành trình':'Nhánh truyện'} #{session.id}</span>
-            <small>{session.status==='archived'?'Đã lưu trữ':
-              session.revision===0&&session.headTurnId===null?'Chưa mở đầu':
-              'Đã xuất bản · phiên bản '+session.revision}</small>
-          </button>)}
-        </div>
+      <aside className="ebr-reader-sessions" aria-label="Quản lý phiên đọc">
+        <button type="button" className="ebr-reader-session-toggle" aria-expanded={sessionPickerOpen}
+          aria-controls="ebr-reader-session-picker"
+          onClick={()=>setSessionPickerOpen(value=>!value)} disabled={busy}>
+          <span>Phiên đọc · {view?.session.id??'Chưa chọn'}</span>
+          <span aria-hidden="true">▾</span>
+        </button>
+        {sessionPickerOpen&&<div id="ebr-reader-session-picker" className="ebr-reader-session-picker">
+          <div className="ebr-reader-aside-heading">
+            <h2>Chọn phiên đọc</h2>
+            <button type="button" onClick={()=>{setSessionPickerOpen(false);void create()}}
+              disabled={busy||uncertain}>+ Tạo mới</button>
+          </div>
+          {sessions.length===0&&<p>Chưa có phiên đọc. Bắt đầu hành trình mới.</p>}
+          <div className="ebr-reader-session-list">
+            {sessions.map(session=><button type="button" key={session.id}
+              aria-current={session.id===view?.session.id?'true':undefined}
+              disabled={busy} onClick={()=>{
+                setSessionPickerOpen(false)
+                setReadPositionReady(false)
+                selectSession(session.id!)
+              }}>
+              <span>{session.parentSessionId===null?'Hành trình':'Nhánh truyện'} #{session.id}</span>
+              <small>{session.status==='archived'?'Đã lưu trữ':
+                session.revision===0&&session.headTurnId===null?'Chưa mở đầu':
+                'Đã xuất bản · phiên bản '+session.revision}</small>
+            </button>)}
+          </div>
+        </div>}
       </aside>
       <section className="ebr-reader-story" aria-label="Trang đọc">
         {!view?<div className="ebr-reader-empty"><h2>Chưa có trang đọc</h2><p>Tạo phiên mới để bắt đầu câu chuyện.</p>
           <button type="button" disabled={busy||uncertain} onClick={()=>void create()}>Bắt đầu đọc</button></div>:
           <>
-            {view.turns.length>0&&<ReaderStage key={view.session.headTurnId}
-              sceneHintsJson={view.turns[view.turns.length-1]?.sceneHintsJson??null}/>}
             <div className="ebr-reader-paper">
               {view.turns.length===0?<div className="ebr-reader-empty">
                 <h2>Trang đầu còn trắng</h2>
@@ -260,9 +314,21 @@ export default function ReaderPage(){
               </div>:view.turns.map((turn,index)=><article className="ebr-reader-turn" key={turn.id}
                 data-turn-id={turn.id} aria-label={'Trang '+(index+1)}>
                 <div className="ebr-reader-turn-top"><span>Trang {index+1}</span>
-                  <button type="button" disabled={busy||uncertain}
-                    onClick={()=>void fork(turn.id!)} aria-label={'Rẽ nhánh từ trang '+(index+1)}>
-                    Rẽ nhánh từ đây</button></div>
+                  <div className="ebr-reader-turn-menu">
+                    <button type="button" className="ebr-reader-overflow" disabled={busy||uncertain}
+                      aria-label={'Tùy chọn trang '+(index+1)}
+                      aria-expanded={forkMenuTurnId===turn.id}
+                      onClick={()=>setForkMenuTurnId(value=>value===turn.id?null:turn.id!)}>⋯</button>
+                    {forkMenuTurnId===turn.id&&<div className="ebr-reader-fork-menu">
+                      <button type="button" onClick={()=>{
+                        setForkMenuTurnId(null)
+                        void fork(turn.id!)
+                      }}>Rẽ nhánh từ đây</button>
+                    </div>}
+                  </div>
+                </div>
+                {turn.id===view.session.headTurnId&&
+                  <ReaderStage key={turn.id} sceneHintsJson={turn.sceneHintsJson??null}/>}
                 {turn.content.split(/\n\s*\n/u).filter(Boolean).map((paragraph,i)=>
                   <p key={i}>{paragraph}</p>)}
               </article>)}
