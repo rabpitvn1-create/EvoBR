@@ -9,6 +9,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { chromium } from '@playwright/test'
+import { getVoiceProfileV1 } from './reader-voice-profiles.mjs'
 
 const TOTAL_TURNS = 20
 const SCENARIO_ID = 'evobr-p1-cao-minh-level0-v1'
@@ -242,7 +243,7 @@ async function main() {
     process.stdout.write('P1: node scripts/quality-evals/reader-vietnamese-baseline.mjs [OUTPUT_DIR]\n' +
       'Required: EVO_P1_PROVIDER, EVO_P1_MODEL. OpenAI-compatible route also requires EVO_P1_BASE_URL, EVO_P1_API_KEY.\n' +
       'Codex login route: EVO_P1_PROVIDER=codex, EVO_P1_ALLOW_CODEX_LOGIN=1 (no external API key); authenticated Codex CLI and approved model required.\n' +
-      'Optional: EVO_P1_INPUT_USD_PER_M, EVO_P1_OUTPUT_USD_PER_M, EVO_P1_MAX_RETRIES (default 0).\n' +
+      'Optional: EVO_P1_VOICE_PROFILE (one registered selection-round style), EVO_P1_INPUT_USD_PER_M, EVO_P1_OUTPUT_USD_PER_M, EVO_P1_MAX_RETRIES (default 0).\n' +
       'Requires Node 24, npm ci and Playwright Chromium. Always uses real src/lib/ai/client.ts.\n')
     return
   }
@@ -250,6 +251,10 @@ async function main() {
     throw Error('NODE_VERSION_UNSUPPORTED: AGENTS.md requires Node.js 24 for P1.')
   }
   const config = validateEnvironment()
+  const voiceProfileId = process.env.EVO_P1_VOICE_PROFILE || null
+  const voiceProfile = voiceProfileId ? getVoiceProfileV1(voiceProfileId) : null
+  const activeSystemPrompt = voiceProfile ? SYSTEM_PROMPT + '\n\nCHỈ ĐẠO GIỌNG VĂN (không sửa Canon):\n' + voiceProfile.instruction : SYSTEM_PROMPT
+  const voiceProfileHash = voiceProfile ? sha256(JSON.stringify({ id: voiceProfileId, ...voiceProfile })) : null
   const directory = resolve(process.argv[2] || 'p1-results')
   const runId = randomUUID()
   const startedAt = new Date().toISOString()
@@ -271,7 +276,9 @@ async function main() {
       schema: 'evobr.reader-p1-baseline', version: 1, runId, startedAt,
       updatedAt: new Date().toISOString(), status: state,
       scenario: SCENARIO, scenarioHash: sha256(JSON.stringify(SCENARIO)),
-      promptVersion: 'reader-prose-baseline-v1',
+      promptVersion: voiceProfile ? 'reader-prose-voice-selection-v1' : 'reader-prose-baseline-v1',
+      voiceProfileId, voiceProfileHash, voiceProfileVersion: voiceProfile?.version ?? null,
+      systemPromptHash: sha256(activeSystemPrompt),
       transport: 'repo-browser-chat-client', realProvider: true,
       modelConfig: safeConfig, summary: summarize(turns, config),
       lastError, turns,
@@ -295,7 +302,7 @@ async function main() {
     }
     for (let turn = 1; turn <= TOTAL_TURNS; turn++) {
       const history = instructions(turn, previous)
-      const messages = [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: history }]
+      const messages = [{ role: 'system', content: activeSystemPrompt }, { role: 'user', content: history }]
       const record = { turn, status: 'running', historyLength: previous.length,
         historyHash: sha256(history), attempts: [], retries: 0, durationMs: 0 }
       turns.push(record)
