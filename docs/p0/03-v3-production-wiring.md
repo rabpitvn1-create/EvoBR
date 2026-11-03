@@ -118,8 +118,8 @@ All provider calls, hashing requiring I/O, UI messaging and callback injection h
 
 ## 7. P0.4 and P0.5 handoff
 
-P0.4 must specify (1) how the same immutable reader Gateway assembly reaches generation and semantic review; (2) how its evidence supports prose versus choice semantic checks; (3) session memory readiness and baseline reconstruction; (4) source provenance and confirmed-only facts/knowledge; (5) branch cutoff.
+**Resolved by [P0.4](./04-reader-context-memory-contract.md):** the identical frozen Gateway assembly reaches generation/V3/choice stages; lineage, provenance, Canon snapshot and conditional memory readiness are explicitly specified.
 
-P0.5 must allocate P4/P5 implementation files, registered Skills/formal entries, tests and cost/budget measurements for the additional choice-generation + verifier calls. Do not assume existing chapter V3 budget covers the whole reader turn.
+**Resolved by [P0.5](./05-implementation-plan-and-regression-matrix.md):** P4/P5 file owners, proposed Skill/formal entries, unified regression matrix and six-call worst-case instrumentation are assigned. The existing chapter V3 budget does not cover a whole reader turn.
 
 No change to current editor, author-confirmed adoption or production model routing in P0.3.
