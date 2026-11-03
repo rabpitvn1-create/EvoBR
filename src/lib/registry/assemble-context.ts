@@ -16,6 +16,15 @@ import { assertRecordInScope, resolveReadScope } from '../workspace/scope'
 import { maybeInjectHarnessFaultV1 } from '../agent/dev-fault-injection'
 import { assertReaderAssemblyBoundaryV1 } from '../reader/gateway-sources'
 
+// P3 reader adapter is a governed specialization of this same Gateway.
+// It never falls back to implicit Work source selection.
+export {
+  prepareReaderContextV1, assertReaderContextCurrentV1,
+  readerContextCacheKeyV1, invalidateReaderContextAfterImportOrRefreshV1,
+  beginReaderMemorySagaV1, settleReaderMemoryTaskV1,
+  retryReaderMemoryTaskV1, inspectReaderMemorySagaV1,
+} from '../reader/context'
+
 // CTXG contracts share the existing assembleContext/CONTEXT_SOURCES boundary.
 // Re-exporting keeps callers away from a parallel context entrypoint.
 export {
