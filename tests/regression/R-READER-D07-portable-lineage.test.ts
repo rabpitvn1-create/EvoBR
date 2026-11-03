@@ -9,17 +9,18 @@ import { createWorkspace } from '../../src/lib/workspace/create-workspace'
 import { deriveExportProjectJSON, CURRENT_EXPORT_VERSION } from '../../src/lib/export/registry-export'
 import { deriveImportProjectJSON } from '../../src/lib/export/registry-import'
 import { CURRENT_BACKUP_VERSION, inspectProjectBackup } from '../../src/lib/export/backup-trust'
+import { captureReaderCanonBaselineV1 } from '../../src/lib/reader/baseline'
+import type { ReaderCanonBaselineCaptureV1 } from '../../src/lib/reader/baseline'
 
 type BackupV18 = Awaited<ReturnType<typeof deriveExportProjectJSON>>
 type Portable = Record<string, any>
 const now = 1740000000000
 
-const session = (projectId: number, workId: number, tag: string, parentSessionId: number | null) => ({
+const session = (projectId: number, workId: number, baseline: ReaderCanonBaselineCaptureV1, parentSessionId: number | null) => ({
   projectId, workId, parentSessionId, forkTurnId: null as number | null,
   headTurnId: null as number | null, memoryReadyThroughTurnId: null as number | null,
   revision: 0, status: 'active' as const,
-  canonBaselineRef: tag, canonBaselineHash: 'b'.repeat(64),
-  canonBaselineSnapshotJson: JSON.stringify({ version: 1, tag }),
+  ...baseline,
   createdAt: now, updatedAt: now,
 })
 const turn = (projectId: number, sessionId: number, turnOrdinal: number, parentTurnId: number | null) => ({
@@ -33,20 +34,21 @@ async function seedBranchingReader() {
     name: 'D07 Reader portability', genres: ['horror'],
     description: '', targetWordCount: 0, status: 'drafting',
   })
-  const root = await db.readerSessions.add(session(scope.projectId, scope.workId, 'root', null))
+  const baseline = await captureReaderCanonBaselineV1(scope, { maxSnapshotBytes: 2_000_000 })
+  const root = await db.readerSessions.add(session(scope.projectId, scope.workId, baseline, null))
   const t1 = await db.readerTurns.add(turn(scope.projectId, root, 1, null))
   const t2 = await db.readerTurns.add(turn(scope.projectId, root, 2, t1))
   await db.readerSessions.update(root, { headTurnId: t2, memoryReadyThroughTurnId: t1, revision: 2 })
 
   const child = await db.readerSessions.add({
-    ...session(scope.projectId, scope.workId, 'child', root),
+    ...session(scope.projectId, scope.workId, baseline, root),
     forkTurnId: t1, headTurnId: t1,
   })
   const t3 = await db.readerTurns.add(turn(scope.projectId, child, 1, t1))
   await db.readerSessions.update(child, { headTurnId: t3, memoryReadyThroughTurnId: t1, revision: 1 })
 
   const grandchild = await db.readerSessions.add({
-    ...session(scope.projectId, scope.workId, 'grandchild', child),
+    ...session(scope.projectId, scope.workId, baseline, child),
     forkTurnId: t3, headTurnId: t3, memoryReadyThroughTurnId: t1,
   })
   const t4 = await db.readerTurns.add(turn(scope.projectId, grandchild, 1, t3))
@@ -90,8 +92,10 @@ describe('P2 D07 reader session/turn portable remapping', () => {
     const turns = await db.readerTurns.where('projectId').equals(importedId).toArray()
     expect(sessions).toHaveLength(3)
     expect(turns).toHaveLength(4)
-    const byTag = Object.fromEntries(sessions.map(row => [row.canonBaselineRef, row]))
-    const root = byTag.root!, child = byTag.child!, grand = byTag.grandchild!
+    const root = sessions.find(row => row.parentSessionId === null)!
+    const child = sessions.find(row => row.parentSessionId === root.id)!
+    const grand = sessions.find(row => row.parentSessionId === child.id)!
+    expect(sessions.every(row => row.canonBaselineHash === root.canonBaselineHash)).toBe(true)
     expect(root.parentSessionId).toBeNull()
     expect(child.parentSessionId).toBe(root.id)
     expect(grand.parentSessionId).toBe(child.id)
@@ -131,7 +135,9 @@ describe('P2 D07 reader session/turn portable remapping', () => {
     it('rejects missing required deferred mapping ' + field + ' without partial project import', async () => {
       const { scope } = await seedBranchingReader()
       const backup = await deriveExportProjectJSON(scope.projectId)
-      const child = readerPortable(backup, 'readerSessions').find(row => row.canonBaselineRef === 'child')!
+      const portable = readerPortable(backup, 'readerSessions')
+      const root = portable.find(row => row._parentExportId == null)!
+      const child = portable.find(row => row._parentExportId === root._exportId)!
       child[field] = 1000000
       await expectAtomicFailure(backup, '缺失延迟外键映射')
     })
@@ -140,7 +146,9 @@ describe('P2 D07 reader session/turn portable remapping', () => {
   it('rejects dangling parent session instead of silently materializing a root', async () => {
     const { scope } = await seedBranchingReader()
     const backup = await deriveExportProjectJSON(scope.projectId)
-    readerPortable(backup, 'readerSessions').find(row => row.canonBaselineRef === 'child')!._parentExportId = 1000000
+    const portable = readerPortable(backup, 'readerSessions')
+    const root = portable.find(row => row._parentExportId == null)!
+    portable.find(row => row._parentExportId === root._exportId)!._parentExportId = 1000000
     await expectAtomicFailure(backup, 'reader tree parent reference missing')
   })
 
