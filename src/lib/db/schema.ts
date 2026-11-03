@@ -21,7 +21,7 @@ import type { TemporalFact } from '../types/temporal-fact'
 export const STORYFORGE_DATABASE_NAME = 'evobr-longform'
 export const STORYFORGE_SCHEMA_VERSION = 14
 /** Long Form profile of upstream schema 13; isolated from StoryForge browser data. */
-const STORYFORGE_STORES_V13 = {
+export const STORYFORGE_STORES_V13 = {
 projects: '++id, &workspaceUid, workspacePurpose, name, createdAt, updatedAt',
 worlds: '++id, projectId, identityKind, code, [projectId+identityKind], [projectId+updatedAt]',
 works: '++id, projectId, worldId, code, &[projectId+code], [projectId+worldId], [worldId+updatedAt], status, activeNarrativeModuleId',
