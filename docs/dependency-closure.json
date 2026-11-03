@@ -20355,7 +20355,7 @@
           "kind": "module"
         },
         {
-          "path": "src/lib/types.ts",
+          "path": "src/lib/types/index.ts",
           "kind": "type"
         },
         {
@@ -20673,7 +20673,7 @@
           "kind": "module"
         },
         {
-          "path": "src/lib/types.ts",
+          "path": "src/lib/types/index.ts",
           "kind": "type"
         },
         {
