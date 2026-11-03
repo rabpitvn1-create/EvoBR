@@ -186,29 +186,49 @@ export async function runReaderChoiceStageV1(input:{
     if(handle.calls>=READER_MODEL_CALL_LIMIT_V1)break
     const attempt=index+1
     const messages=buildReaderChoiceMessagesV1(handle,finalProse,input.finalProseHash)
-    let started:null|{attempt:number;startedAt:number}=null
+    const started=await beginReaderModelStepV1({
+      handle,stepId:READER_STEPS_V1.choices,
+      attempt,messages,maxOutputTokens:1200,
+    })
+    attempts++
+    let response:Awaited<ReturnType<typeof callReaderModelV1>>
     try{
-      started=await beginReaderModelStepV1({handle,stepId:READER_STEPS_V1.choices,
-        attempt,messages,maxOutputTokens:1200})
-      attempts++
-      const response=await callReaderModelV1({
+      response=await callReaderModelV1({
         handle,stage:READER_STEPS_V1.choices,
         messages,resolution:input.resolution,signal:input.signal,
       })
-      const responseHash=await hashCanonicalValue(response.text)
-      responseHashes.push(responseHash)
-      await finishReaderModelStepV1({handle,stepId:READER_STEPS_V1.choices,
-        attempt,startedAt:started.startedAt,output:response.text,complete:false,
-        ...response.usage,requestLifecycle:response.requestLifecycle})
-      const parsed=parseReaderBranchChoicesV1(response.text,finalProse)
-      if(!parsed.choices.length)throw Error('no grounded model choices')
-      branches=parsed.choices
-      await completeReaderModelStepV1(handle,READER_STEPS_V1.choices,attempt,responseHash)
-      break
     }catch(error){
-      if(started)await failReaderModelStepV1(handle,READER_STEPS_V1.choices,attempt,error)
-      if(attempt>maxRetries)break
+      // Provider failures or unknown delivery are NOT invalid branch candidates.
+      // Never turn an unresolved transport failure into a publishable Continue.
+      await failReaderModelStepV1(handle,READER_STEPS_V1.choices,attempt,error)
+      throw error
     }
+    const responseHash=await hashCanonicalValue(response.text)
+    responseHashes.push(responseHash)
+    await finishReaderModelStepV1({
+      handle,stepId:READER_STEPS_V1.choices,attempt,
+      startedAt:started.startedAt,output:response.text,complete:false,
+      ...response.usage,requestLifecycle:response.requestLifecycle,
+    })
+    let parsed:{choices:ReaderBranchChoiceV1[];rejected:number}
+    try{parsed=parseReaderBranchChoicesV1(response.text,finalProse)}
+    catch{parsed={choices:[],rejected:1}}
+    if(!parsed.choices.length){
+      // Preserve a real response and deterministic rejection as explicit
+      // evidence. A retry is possible only if one model call remains reserved
+      // for the mandatory coherence verifier of a future valid branch.
+      if(index<maxRetries&&handle.calls<READER_MODEL_CALL_LIMIT_V1-1){
+        await failReaderModelStepV1(handle,READER_STEPS_V1.choices,attempt,
+          new Error('no grounded Reader branch'),true)
+        continue
+      }
+      await completeReaderModelStepV1(handle,READER_STEPS_V1.choices,
+        attempt,await hashCanonicalValue({responseHash,rejected:parsed.rejected,continue:true}))
+      break
+    }
+    branches=parsed.choices
+    await completeReaderModelStepV1(handle,READER_STEPS_V1.choices,attempt,responseHash)
+    break
   }
   let issues:ReaderChoiceIssueV1[]=[]
   let verifierResponseHash:string|null=null
