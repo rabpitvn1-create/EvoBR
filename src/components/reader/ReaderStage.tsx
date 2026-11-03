@@ -1,47 +1,37 @@
-import { useEffect, useMemo, useState } from 'react'
-import { parseReaderSceneHintsV1, READER_STAGE_ASSETS_V1,
+import { useMemo, useState } from 'react'
+import { prominentReaderEntityV1, parseReaderSceneHintsV1, READER_STAGE_ASSETS_V1,
   readerStageAssetUrlV1, type ReaderStageManifestV1 } from '../../lib/reader/stage-assets'
 
-/**
- * Presentation only. A background lives in a clipped surface; overlays live in
- * an independent, overflow-visible layer. Neither layer accepts input.
+/** Presentation only. Eligibility is decided before first paint from committed hints.
+ * The 220px stage always keeps its layout box after image load/error.
  */
 export default function ReaderStage({sceneHintsJson,assets=READER_STAGE_ASSETS_V1}:{
   sceneHintsJson:string|null
   assets?:ReaderStageManifestV1
 }) {
   const hints=useMemo(()=>parseReaderSceneHintsV1(sceneHintsJson),[sceneHintsJson])
-  const background=hints ? assets.levels[hints.levelId] : undefined
-  const protagonist=assets.protagonist
-  const entities=useMemo(()=>hints?.entityIds
-    .map(id=>({id,src:assets.entities[id]})).filter(
-      (item):item is {id:string;src:string}=>Boolean(item.src))??[],
-    [hints,assets])
-  const [loaded,setLoaded]=useState({background:false,protagonist:false})
-  const [failed,setFailed]=useState(false)
-  const [hiddenEntities,setHiddenEntities]=useState<string[]>([])
-  useEffect(()=>{
-    setLoaded({background:false,protagonist:false})
-    setFailed(false)
-    setHiddenEntities([])
-  },[background,protagonist,sceneHintsJson])
-  if(!background||!protagonist||failed)return null
-  const ready=loaded.background&&loaded.protagonist
-  return <figure className="ebr-stage" aria-label="Minh họa tĩnh cho cảnh đã xuất bản"
-    data-ready={ready?'true':'false'} data-level={hints?.levelId}>
+  const background=hints?assets.levels[hints.levelId]:undefined
+  const selected=useMemo(()=>prominentReaderEntityV1(hints,assets),[hints,assets])
+  const [failed,setFailed]=useState<string[]>([])
+  if(!background)return null
+  const fail=(slot:string)=>setFailed(previous=>previous.includes(slot)?previous:[...previous,slot])
+  const focus=assets.levelFocus[hints!.levelId]??{x:50,y:50}
+  return <figure className="ebr-stage" aria-label="Minh họa tĩnh của lượt truyện hiện tại"
+    data-level={hints!.levelId}>
     <div className="ebr-stage-window" aria-hidden="true">
-      <img className="ebr-stage-background" src={readerStageAssetUrlV1(background)} alt=""
-        onLoad={()=>setLoaded(prev=>({...prev,background:true}))}
-        onError={()=>setFailed(true)}/>
+      {!failed.includes('background')&&
+        <img className="ebr-stage-background" src={readerStageAssetUrlV1(background)}
+          style={{objectPosition:focus.x+'% '+focus.y+'%'}} alt=""
+          onError={()=>fail('background')}/>}
     </div>
     <div className="ebr-stage-actors" aria-hidden="true">
-      <img className="ebr-stage-protagonist" src={readerStageAssetUrlV1(protagonist)} alt=""
-        onLoad={()=>setLoaded(prev=>({...prev,protagonist:true}))}
-        onError={()=>setFailed(true)}/>
-      {entities.filter(e=>!hiddenEntities.includes(e.id)).map(entity=>
-        <img key={entity.id} className="ebr-stage-entity" data-entity={entity.id}
-          src={readerStageAssetUrlV1(entity.src)} alt=""
-          onError={()=>setHiddenEntities(prev=>[...prev,entity.id])}/>)}
+      {assets.protagonist&&!failed.includes('protagonist')&&
+        <img className="ebr-stage-protagonist" src={readerStageAssetUrlV1(assets.protagonist)}
+          alt="" onError={()=>fail('protagonist')}/>}
+      {selected&&!failed.includes(selected.id)&&
+        <img className="ebr-stage-entity" data-entity={selected.id}
+          src={readerStageAssetUrlV1(selected.src)}
+          alt="" onError={()=>fail(selected.id)}/>}
     </div>
   </figure>
 }
