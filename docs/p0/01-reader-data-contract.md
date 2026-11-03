@@ -87,12 +87,12 @@ Required fields include `id` after insertion, `projectId`, `createdAt`; `updated
 | Import missing required parent ref | Transaction rollback |
 | Refresh/restart after publication | Same head, choices, decision and receipt |
 
-## 6. Decisions settled in P0.2 and remaining P0.4 obligations
+## 6. Settled P0 contracts and implementation proofs remaining
 
 - **Settled in P0.4:** MVP uses a versioned immutable reader-owned `canonBaselineSnapshotJson` (hash verified) on `readerSessions`, not a live WorldRelease locator. Work authoring intent must be explicitly included from approved source data. P2 verifies consistent capture, backup and size bounds.
-- Whether the existing importer safely resolves BOTH `headTurnId` and `forkTurnId` deferred pointers, and whether custom selfTree topological ordering can cover a nested session fork.
+- **P2 implementation proof (P0.5):** Verify the importer resolves BOTH `headTurnId` and `forkTurnId` deferred pointers, plus nested `parentSessionId` self-tree; fail closed or add a tested minimal importer extension.
 - **Settled by P0.2:** the opening turn is an explicit `kind:'opening'` intent with no decision; `Đọc tiếp` is a real, persisted `kind:'continue'` choice with a numeric ID, never a sentinel. Continue is injected when validated branch choices are empty. Do not reopen these decisions in P0.5.
 - **Settled at contract level in P0.4:** Only lineage-visible confirmed and evidenced rows become reader context; candidate/retracted rows remain excluded. Full exact continuity can substitute pending summaries when within budget; otherwise require verified summary prefix and exact suffix. P3 must implement confirmation/supersession and measurable budget policy.
-- Which fields are truly AI writable versus trusted coordinator-owned; do not indiscriminately register all receipt/status fields as model-writable.
+- **P2/P4 implementation proof (P0.5):** Register exact permitted reader fields and Skill write targets, preserving coordinator-only scope/receipt/status authority. Never indiscriminately make metadata model-writable.
 
 No runtime or editor behavior is changed in P0.1.
