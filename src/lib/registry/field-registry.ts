@@ -547,6 +547,95 @@ text('stateCards', 'entityName', ['角色名', '实体名']),
 { ...json('stateCards', 'fields', ['状态字段']), validate: validateStateFields },
 num('stateCards', 'lastChapterId')]
 
+/**
+ * P2 Reader record codec. These are closed structured persistence fields for
+ * future trusted P3/P5 coordinators, NOT aiGeneration capabilities. No reader
+ * Skill/formal AI entry is registered in P2. In particular, `confirmed`,
+ * `published`, and `committed` are never model-issued verdicts.
+ *
+ * Scope stamps projectId/workId and createdAt. The caller-owned transaction
+ * and evidence/lineage/CAS checks remain mandatory at P3/P5.
+ */
+const READER_FIELD_SPECS: FieldSpec[] = [
+  num('readerSessions', 'parentSessionId'),
+  num('readerSessions', 'forkTurnId'),
+  num('readerSessions', 'headTurnId'),
+  num('readerSessions', 'revision'),
+  enumeration('readerSessions', 'status', ['active', 'paused', 'archived']),
+  text('readerSessions', 'canonBaselineRef'),
+  text('readerSessions', 'canonBaselineHash'),
+  json('readerSessions', 'canonBaselineSnapshotJson'),
+  num('readerSessions', 'memoryReadyThroughTurnId'),
+
+  num('readerTurns', 'sessionId'),
+  num('readerTurns', 'parentTurnId'),
+  num('readerTurns', 'turnOrdinal'),
+  longtext('readerTurns', 'content'),
+  text('readerTurns', 'contentHash'),
+  enumeration('readerTurns', 'status', ['published']),
+  json('readerTurns', 'sceneHintsJson'),
+
+  num('readerChoices', 'sessionId'),
+  num('readerChoices', 'turnId'),
+  text('readerChoices', 'choiceKey'),
+  enumeration('readerChoices', 'kind', ['branch', 'continue']),
+  text('readerChoices', 'text'),
+  num('readerChoices', 'order'),
+  enumeration('readerChoices', 'status', ['available']),
+
+  num('readerDecisions', 'sessionId'),
+  text('readerDecisions', 'requestKey'),
+  num('readerDecisions', 'sourceTurnId'),
+  num('readerDecisions', 'choiceId'),
+  num('readerDecisions', 'resultTurnId'),
+
+  num('readerFacts', 'sessionId'),
+  num('readerFacts', 'originTurnId'),
+  text('readerFacts', 'predicate'),
+  text('readerFacts', 'subjectRef'),
+  json('readerFacts', 'valueJson'),
+  longtext('readerFacts', 'evidenceQuote'),
+  text('readerFacts', 'sourceHash'),
+  enumeration('readerFacts', 'status', ['candidate', 'confirmed', 'retracted']),
+
+  num('readerKnowledge', 'sessionId'),
+  num('readerKnowledge', 'characterId'),
+  num('readerKnowledge', 'originTurnId'),
+  text('readerKnowledge', 'knowledgeKey'),
+  longtext('readerKnowledge', 'statement'),
+  longtext('readerKnowledge', 'sourceQuote'),
+  enumeration('readerKnowledge', 'status', ['candidate', 'confirmed', 'retracted']),
+
+  num('readerMemory', 'sessionId'),
+  num('readerMemory', 'throughTurnId'),
+  longtext('readerMemory', 'summary'),
+  json('readerMemory', 'continuityJson'),
+  text('readerMemory', 'sourceTextHash'),
+  text('readerMemory', 'lineageFingerprint'),
+  text('readerMemory', 'summaryPolicyVersion'),
+  enumeration('readerMemory', 'status', ['ready', 'stale', 'failed']),
+  num('readerMemory', 'processingRunId'),
+
+  num('readerRetrievalChunks', 'sessionId'),
+  num('readerRetrievalChunks', 'sourceTurnId'),
+  longtext('readerRetrievalChunks', 'content'),
+  text('readerRetrievalChunks', 'contentHash'),
+  longtext('readerRetrievalChunks', 'sourceQuote'),
+
+  num('readerPublicationRuns', 'sessionId'),
+  text('readerPublicationRuns', 'requestKey'),
+  num('readerPublicationRuns', 'runId'),
+  text('readerPublicationRuns', 'candidateHash'),
+  text('readerPublicationRuns', 'requestFingerprint'),
+  text('readerPublicationRuns', 'contextManifestHash'),
+  text('readerPublicationRuns', 'semanticArtifactHash'),
+  num('readerPublicationRuns', 'expectedSessionRevision'),
+  num('readerPublicationRuns', 'resultTurnId'),
+  json('readerPublicationRuns', 'receiptJson'),
+  enumeration('readerPublicationRuns', 'status', ['committed']),
+]
+FIELD_REGISTRY.push(...READER_FIELD_SPECS)
+
 // Proposals require the domain confirmation boundary; receipts are system-owned.
 FIELD_REGISTRY.push(...PROJECT_TABLES.flatMap(spec => (spec.worldSemantic?.projector?.annotationFields ?? [])
   .filter(field => field !== 'narrativeAuthorityV1')
