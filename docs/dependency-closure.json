@@ -20429,10 +20429,6 @@
         },
         {
           "path": "src/lib/reader/recovery.ts",
-          "kind": "module"
-        },
-        {
-          "path": "src/lib/reader/recovery.ts",
           "kind": "type"
         },
         {
