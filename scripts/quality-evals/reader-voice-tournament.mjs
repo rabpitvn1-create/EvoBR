@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createBlindPackets, parseCompletedBaseline, renderBlindReviewHtml,
   validateBlindReview, DIMENSIONS } from './reader-blind-review.mjs'
-import { getVoiceProfileV1, TOURNAMENT_PROFILES_V1 } from './reader-voice-profiles.mjs'
+import { getVoiceProfileV1, TOURNAMENT_PROFILES_V1, buildVoiceSystemPromptV1 } from './reader-voice-profiles.mjs'
 
 const hash = x => createHash('sha256').update(x).digest('hex')
 const outJson = value => JSON.stringify(value, null, 2) + '\n'
@@ -62,7 +62,7 @@ function assertProfileReport(report, id, expectedScenarioHash = null, expectedMo
     report.voiceProfileVersion !== profile.version || report.promptVersion !== 'reader-prose-voice-selection-v1' ||
     report.scenario?.id !== 'evobr-p1-cao-minh-level0-v1' ||
     report.scenarioHash !== hash(JSON.stringify(report.scenario)) ||
-    !/^[a-f0-9]{64}$/.test(report.systemPromptHash || '')) {
+    report.systemPromptHash !== hash(buildVoiceSystemPromptV1(id))) {
     throw Error('Profile/Canon/prompt evidence mismatch for ' + id)
   }
   if (expectedScenarioHash && report.scenarioHash !== expectedScenarioHash) throw Error('Scenario mismatch across profiles')
@@ -266,8 +266,10 @@ async function rank(blindDir, scoringDir, output) {
     candidates[1].dimensions.voice === top.dimensions.voice)
   const winner = !tied && top ? {
     ...top, p4PromptDirective: getVoiceProfileV1(top.profileId).instruction,
+    p4FullSystemPrompt: buildVoiceSystemPromptV1(top.profileId),
     instructionVersion: getVoiceProfileV1(top.profileId).version,
     promptDirectiveHash: hash(getVoiceProfileV1(top.profileId).instruction),
+    fullSystemPromptHash: hash(buildVoiceSystemPromptV1(top.profileId)),
   } : null
   const result = {
     schema: 'evobr.reader-voice-selection-result', version: 1, tournamentId: key.tournamentId,
