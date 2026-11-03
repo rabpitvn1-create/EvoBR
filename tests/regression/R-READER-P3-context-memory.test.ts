@@ -131,6 +131,26 @@ describe('P3 Reader Context & Memory C01–C14',()=>{
     expect(again.sourcePacket.contentByKey['reader.baseline']).toBe(first.sourcePacket.contentByKey['reader.baseline'])
     expect(again.contextManifestHash).toBe(first.contextManifestHash)
   })
+  it('C06 concurrent proof: root snapshot never combines half of a World/Work transaction',async()=>{
+    const scope=await workspace()
+    const beforeWorld=(await db.worlds.get(scope.worldId))!
+    const beforeWork=(await db.works.get(scope.workId))!
+    const changedWorldCode=beforeWorld.code+'-after'
+    const changedWorkTitle='Title after coordinated author edit'
+    const snapshotPending=createRootReaderSessionV1(scope,{maxSnapshotBytes:BOUND})
+    const editPending=db.transaction('rw',db.worlds,db.works,async()=>{
+      await db.worlds.update(scope.worldId,{code:changedWorldCode})
+      await db.works.update(scope.workId,{title:changedWorkTitle})
+    })
+    const [sessionId]=await Promise.all([snapshotPending,editPending])
+    const recorded=JSON.parse((await db.readerSessions.get(sessionId))!.canonBaselineSnapshotJson)
+    const fromBefore=recorded.source.worldCode===beforeWorld.code &&
+      recorded.workIntent.title===beforeWork.title
+    const fromAfter=recorded.source.worldCode===changedWorldCode &&
+      recorded.workIntent.title===changedWorkTitle
+    expect(fromBefore||fromAfter).toBe(true)
+    expect(fromBefore&&fromAfter).toBe(false)
+  })
   it('C07: one registered reader packet/manifest is frozen for future prose V3 and choices',async()=>{
     const scope=await workspace(),sid=await root(scope)
     await append(scope,sid,'Cao Minh nhìn đường.')
@@ -146,6 +166,10 @@ describe('P3 Reader Context & Memory C01–C14',()=>{
     expect(packet.assembly.included.filter(k=>forbidden.includes(k))).toEqual([])
     await expect(assembleContext({projectId:scope.projectId,scope,
       sourceKeys:['reader.baseline']})).rejects.toThrow(/requires authenticated/)
+    await expect(assembleContext({projectId:scope.projectId,scope,
+      readerContextScope:packet.scope,readerFrozenSources:packet.sourcePacket,
+      sourceKeys:['reader.baseline','writtenChapters'],inputBudgetTokens:BUDGET}))
+      .rejects.toThrow(/exactly seven registered reader sources/)
   })
   it('C08: Work-only cache identity fails; sibling session/head/policy keys partition',async()=>{
     const scope=await workspace(),sid=await root(scope)
