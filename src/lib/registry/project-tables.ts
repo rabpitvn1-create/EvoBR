@@ -821,6 +821,10 @@ const PROJECT_TABLE_REGISTRATIONS: ProjectTableRegistration[] = [
 { table: db.readerSessions, name: 'readerSessions', owner: 'project', exportable: true,
   introducedBackupVersion: 18, exportIdField: true,
   domainOwner: WORK_DOMAIN_OWNER, tree: { parentField: 'parentSessionId' },
+  defaults: {
+    parentSessionId: null, forkTurnId: null, headTurnId: null,
+    revision: 0, status: 'active', memoryReadyThroughTurnId: null,
+  },
   refs: [
     { kind: 'simple', field: 'id', target: 'readerSessions[parentSessionId]', onDelete: 'cascade' },
     { kind: 'simple', field: 'id', target: 'readerTurns[sessionId]', onDelete: 'cascade' },
@@ -843,6 +847,7 @@ const PROJECT_TABLE_REGISTRATIONS: ProjectTableRegistration[] = [
 { table: db.readerTurns, name: 'readerTurns', owner: 'project', exportable: true,
   introducedBackupVersion: 18, exportIdField: true,
   domainOwner: READER_CHILD_WORK_DOMAIN_OWNER, tree: { parentField: 'parentTurnId' },
+  defaults: { parentTurnId: null, sceneHintsJson: null, status: 'published' },
   exportRemap: [
     { field: 'sessionId', remapVia: 'readerSessions', exportAs: '_sessionExportId', onUnmapped: 'require' },
     { field: 'parentTurnId', remapVia: 'readerTurns', selfTree: true, exportAs: '_parentExportId' },
