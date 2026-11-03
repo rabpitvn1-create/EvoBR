@@ -1,5 +1,6 @@
 /** P4 choices are generated strictly after the V3-approved prose is frozen. */
 import type { ChatMessage } from '../types'
+import { wholeJSONContainerTextV1 } from '../ai/whole-json-container'
 import type { AIRequestConfigResolution } from '../ai/client'
 import { hashCanonicalValue, canonicalStringify } from '../agent/run/hash'
 import { recordAgentRunArtifactV1 } from '../memory/artifact-store'
@@ -55,7 +56,9 @@ function exactKeys(obj:Record<string,unknown>,keys:string[]):void{
     fail('unexpected JSON fields')
 }
 function parseJson(raw:string):Record<string,unknown>{
-  const trimmed=raw.trim()
+  let trimmed:string
+  try{trimmed=wholeJSONContainerTextV1(raw,'reader choice JSON')}
+  catch{return fail('model output must be one JSON object')}
   if(!trimmed.startsWith('{')||!trimmed.endsWith('}'))fail('model output must be one JSON object')
   try{return object(JSON.parse(trimmed))}catch{return fail('malformed choice JSON')}
 }
