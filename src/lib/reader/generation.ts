@@ -14,7 +14,7 @@ import { buildReaderProseMessagesV1,assertReaderVietnameseProseV1,
 import { resolveFrozenReaderModelV1,callReaderModelV1 } from './model'
 import { createReaderDurableRunV1,READER_STEPS_V1,beginReaderModelStepV1,
   finishReaderModelStepV1,completeReaderModelStepV1,failReaderModelStepV1,
-  READER_MODEL_CALL_LIMIT_V1,type ReaderRunHandleV1 } from './run'
+  READER_MODEL_CALL_LIMIT_V1,assertReaderFrozenStageInputV1,type ReaderRunHandleV1 } from './run'
 import { runReaderDurableSemanticReviewV1,verifyReaderSemanticReceiptV1,
   type ReaderSemanticReceiptV1 } from './semantic-review'
 import { runReaderChoiceStageV1,verifyReaderChoicesReceiptV1,
@@ -62,6 +62,7 @@ export async function verifyReaderGenerationCandidateV1(input:{
   try{
     const {workspace,frozen,handle,candidate}=input
     await assertReaderContextCurrentV1(workspace,frozen)
+    await assertReaderFrozenStageInputV1(handle)
     if(candidate.version!==READER_GENERATION_CANDIDATE_VERSION_V1||
       candidate.runId!==handle.snapshot.run.id||
       candidate.sessionId!==frozen.scope.sessionId||
