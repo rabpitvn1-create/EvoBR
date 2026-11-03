@@ -21,6 +21,7 @@ import { transactionTablesFor } from '../registry/lifecycle'
 import type { ExportRefRemap, TableSpec } from '../registry/types'
 import type { ProjectExportData, ProjectImportOptionsV1 } from './json-export'
 import { CURRENT_BACKUP_VERSION, normalizeProjectBackup } from './backup-trust'
+import { assertImportedReaderGraphV1 } from '../reader/import-integrity'
 
 import { remapNarrativeDomainFieldV1 } from '../narrative-domain/references'
 import { assertNarrativeLineageRowsV1 } from '../world-engine/narrative-lineage-lifecycle'
@@ -593,6 +594,10 @@ export async function deriveImportProjectJSON(data: ProjectExportData, options: 
         await deferred.table.update(deferred.id, { [deferred.remap.field]: patch })
       }
     }
+
+    // Reject cross-session and cross-Work reader edges while the same wide
+    // import transaction can still roll back every imported record.
+    await assertImportedReaderGraphV1(newProjectId)
 
     const projectPatch: Record<string, number | null> = {}
     for (const rm of projectSpec.exportRemap ?? []) {
