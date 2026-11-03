@@ -89,6 +89,9 @@ export default function ReaderPage(){
         const work=await db.works.get(workId)
         if(!work||work.projectId!==projectId)return
         const nextScope={projectId,worldId:work.worldId,workId}
+        // Only an abandoned request from a prior page load needs recovery.
+        // The live coordinator owns any still-running request in this tab.
+        if(inFlight.current)return
         const pending=readPending(nextScope)
         if(pending){
           const receipt=await recoverReaderPublicationV1({
@@ -145,6 +148,7 @@ export default function ReaderPage(){
         maxBaselineBytes:MAX_BASELINE_BYTES,maxChoiceRetries:0,
       })
       sessionStorage.removeItem(pendingStorageKey(currentScope))
+      setUncertain(false)
       selectSession(intent.sessionId)
       await load(intent.sessionId)
     }catch(cause){
@@ -156,6 +160,7 @@ export default function ReaderPage(){
         })
         if(recovered){
           sessionStorage.removeItem(pendingStorageKey(currentScope))
+          setUncertain(false)
           selectSession(intent.sessionId)
           await load(intent.sessionId)
           return
