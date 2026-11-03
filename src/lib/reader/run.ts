@@ -14,7 +14,7 @@ import { hashCanonicalValue, canonicalStringify } from '../agent/run/hash'
 import { estimateTokens } from '../ai/context-budget'
 import type { WorkspaceScope, ChatMessage } from '../types'
 import type { AgentRunContractV2, AgentRunEventTypeV1, AgentRunEventPayloadByTypeV1 } from '../types/agent-run'
-import type { ReaderFrozenContextAssemblyV1 } from './context'
+import { assertReaderContextCurrentV1, type ReaderFrozenContextAssemblyV1 } from './context'
 import { READER_SOURCE_KEYS_V1 } from './gateway-sources'
 
 export const READER_MODEL_CALL_LIMIT_V1 = 6 as const
@@ -146,11 +146,30 @@ export async function createReaderDurableRunV1(input:{
   return {scope,snapshot:await readAgentRunV1(scope,snapshot.run.id),frozen,identity,calls:0,records:[]}
 }
 
+/**
+ * A caller must not mutate segment bytes while retaining the previously
+ * signed manifest and aggregate assembly.text. Verify source-to-segment
+ * equality at EVERY model dispatch, not only at initial Reader preflight.
+ */
+export async function assertReaderFrozenStageInputV1(handle:ReaderRunHandleV1):Promise<void>{
+  await assertReaderContextCurrentV1(handle.scope,handle.frozen)
+  const {assembly,sourcePacket}=handle.frozen
+  if(assembly.included.length!==assembly.segments.length)fail('Reader segment count changed')
+  for(let i=0;i<assembly.included.length;i++){
+    const key=assembly.included[i],exact=sourcePacket.contentByKey[key]
+    if(!exact||assembly.segments[i].content!==exact)
+      fail('Reader source segment altered after frozen Gateway assembly: '+key)
+  }
+  if(assembly.text!==assembly.segments.map(s=>s.content).join('\n\n'))
+    fail('Reader Gateway text/segments disagree')
+}
+
 export async function beginReaderModelStepV1(input:{
   handle:ReaderRunHandleV1;stepId:ReaderStepV1;attempt?:number
   messages:readonly ChatMessage[];maxOutputTokens:number
 }):Promise<{attempt:number;requestHash:string;startedAt:number}>{
   const {handle,stepId}=input,attempt=input.attempt??1
+  await assertReaderFrozenStageInputV1(handle)
   const binding=handle.snapshot.contract.executionBindings?.find(b=>b.stepId===stepId)
   if(!binding)throw Error('[readerDurable] missing frozen Skill binding')
   if(binding.skillId!==STEP_ENTRY[stepId]||handle.calls>=READER_MODEL_CALL_LIMIT_V1)
