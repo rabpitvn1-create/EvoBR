@@ -10,6 +10,8 @@ import { seedCurrentWorkspace } from '../helpers/current-workspace'
 import { stampNewRecord } from '../../src/lib/workspace/scope'
 import { ADOPTION_BY_TARGET } from '../../src/lib/registry/adoption-schema'
 import { deriveExportProjectJSON } from '../../src/lib/export/registry-export'
+import { createAgentRunV1 } from '../../src/lib/agent/run/event-store'
+import { stampCurrentFixtureResourceUidsV1 } from '../helpers/current-resource-identity'
 import { deriveImportProjectJSON } from '../../src/lib/export/registry-import'
 import {
   createRootReaderSessionV1, captureReaderCanonBaselineV1, verifyReaderCanonBaselineV1,
@@ -29,6 +31,44 @@ async function workspace() {
   const { scope } = await seedCurrentWorkspace('P2 reader persistence')
   return scope
 }
+/** Real durable agent-run identity for receipt FK portability, never a fake chapter ID. */
+async function durableRunForReceipt(scope: WorkspaceScope): Promise<number> {
+  const worldGroupId = await db.worldGroups.add({
+    projectId: scope.projectId, worldId: scope.worldId,
+    name: 'Reader provenance world', order: 0, createdAt: now, updatedAt: now,
+  } as any) as number
+  const outlineNodeId = await db.outlineNodes.add({
+    projectId: scope.projectId, workId: scope.workId, worldId: null,
+    worldGroupId, parentId: null, type: 'volume', title: 'Verified run',
+    summary: '', order: 0, createdAt: now, updatedAt: now,
+  } as any) as number
+  await stampCurrentFixtureResourceUidsV1(scope.projectId)
+  const contract = {
+    version: 1, runtimeBindingHash: 'a'.repeat(64),
+    objective: 'Verify reader receipt FK portability',
+    workflowKind: 'long-running-resumable',
+    scope: { projectId: scope.projectId, worldGroupId, outlineNodeIds: [outlineNodeId] },
+    permissions: {
+      contextSourceKeys: ['worldview', 'storyCore'],
+      writeTargets: [{ table: 'outlineNodes', fields: ['summary'], mode: 'candidate-only' }],
+    },
+    budget: {
+      maxModelCalls: 3, maxToolCalls: 4, maxInputTokens: 8000,
+      maxOutputTokens: 2000, maxAttemptsPerStep: 2,
+    },
+    acceptance: [{ id: 'outline.output', kind: 'output-present', required: true }],
+    verificationPlan: [{
+      id: 'outline.terminal', kind: 'terminal', verifier: 'terminal-v1',
+      criterionIds: ['outline.output'],
+    }],
+    failurePolicy: {
+      onProtocolError: 'fail', onVerificationFailure: 'fail', onStaleInput: 'pause-for-author',
+    },
+  }
+  const record = await createAgentRunV1({ scope, worldGroupId, contract })
+  return record.run.id
+}
+
 async function rootWithHistory(scope: WorkspaceScope) {
   const root = await createRootReaderSessionV1(scope, { maxSnapshotBytes: limit })
   const a = await db.readerTurns.add(makeTurn(scope, root, 1, null))
@@ -168,8 +208,18 @@ describe('P2 persistent reader contract D01–D06/D08–D09', () => {
       projectId: scope.projectId, sessionId: child, requestKey: 'one',
       sourceTurnId: a, choiceId, resultTurnId: next, createdAt: now,
     })
+    const runId = await durableRunForReceipt(scope)
+    await db.readerPublicationRuns.add({
+      projectId: scope.projectId, sessionId: child, requestKey: 'one',
+      runId, candidateHash: 'a'.repeat(64), requestFingerprint: 'b'.repeat(64),
+      contextManifestHash: 'c'.repeat(64), semanticArtifactHash: 'd'.repeat(64),
+      expectedSessionRevision: 0, resultTurnId: next,
+      receiptJson: JSON.stringify({ contractVersion: 1, status: 'committed' }),
+      status: 'committed', createdAt: now,
+    })
     const backup = await deriveExportProjectJSON(scope.projectId)
     expect((backup as any).readerDecisions).toHaveLength(1)
+    expect((backup as any).readerPublicationRuns).toHaveLength(1)
     const restored = await deriveImportProjectJSON(backup)
     const decision = await db.readerDecisions.where('projectId').equals(restored).first()
     expect(decision).toBeDefined()
@@ -177,8 +227,12 @@ describe('P2 persistent reader contract D01–D06/D08–D09', () => {
     expect(chosen?.choiceKey).toBe('go')
     expect((await db.readerTurns.get(decision!.sourceTurnId))?.content).toContain('Cao Minh')
     expect((await db.readerTurns.get(decision!.resultTurnId))?.sessionId).toBe(decision!.sessionId)
-    // Receipt + run FK requires a real agent run, covered by the D06 extension
-    // after Muse supplies a compatible durable-run fixture.
+    const receipt = await db.readerPublicationRuns.where('projectId').equals(restored).first()
+    expect(receipt?.status).toBe('committed')
+    expect(receipt?.requestFingerprint).toBe('b'.repeat(64))
+    expect(receipt?.resultTurnId).toBe(decision!.resultTurnId)
+    expect((await db.agentRuns.get(receipt!.runId))?.projectId).toBe(restored)
+    expect(receipt?.runId).not.toBe(runId)
   })
 
   it('D08: snapshot is immutable across Work edits, confirmed-only and byte-identical at fork', async () => {
