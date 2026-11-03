@@ -173,7 +173,7 @@ export function inspectProjectBackup(input: unknown): BackupTrustReport {
         const portable = `_${field}Portable`
         if (field in row) errors.push(`${tableName}[${index}].${field} 不允许携带本地叙事坐标。`)
         if (!(portable in row)) continue
-        if ((version !== 16 && version !== CURRENT_BACKUP_VERSION) || !annotations.includes(field)) {
+        if ((version !== 16 && version !== 17 && version !== CURRENT_BACKUP_VERSION) || !annotations.includes(field)) {
           errors.push(`${tableName}[${index}].${portable} 未在此备份版本/来源登记。`)
           continue
         }
