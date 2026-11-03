@@ -133,3 +133,32 @@ export async function inspectReaderMemorySagaV1(
   const row=await db.readerMemory.where('[sessionId+throughTurnId]').equals([sessionId,throughTurnId]).first()
   return row?parseSaga(row.continuityJson).sagaStatus:'reader_memory_pending'
 }
+
+/** A failed task can be explicitly requeued with the SAME deterministic id. */
+export async function retryReaderMemoryTaskV1(input:{
+  workspace:WorkspaceScope;sessionId:number;throughTurnId:number;
+  taskKind:ReaderMemoryTaskKindV1;taskId:string;sourceHash:string
+}):Promise<MemorySagaReceiptV1> {
+  const proof=await readerMemoryWindowProofV1(input.workspace,input.sessionId,input.throughTurnId)
+  if(proof.sourceTextHash!==input.sourceHash)fail('retry source provenance changed')
+  let result:MemorySagaReceiptV1|undefined
+  await db.transaction('rw',db.readerMemory,async()=>{
+    const row=await db.readerMemory.where('[sessionId+throughTurnId]').equals([input.sessionId,input.throughTurnId]).first()
+    if(!row||row.projectId!==input.workspace.projectId||
+      row.sourceTextHash!==proof.sourceTextHash||row.lineageFingerprint!==proof.lineageFingerprint) {
+      fail('retry reader memory provenance differs')
+    }
+    const receipt=parseSaga(row.continuityJson)
+    const task=receipt.tasks.find(t=>t.taskKind===input.taskKind)
+    if(!task||task.taskId!==input.taskId||task.sourceHash!==input.sourceHash)fail('retry task identity invalid')
+    if(task.status!=='failed')fail('only failed task can be explicitly retried')
+    task.status='pending'
+    delete task.error
+    receipt.sagaStatus=sagaState(receipt.tasks)
+    await db.readerMemory.update(row.id!,{continuityJson:JSON.stringify(receipt),
+      status:receipt.tasks.find(t=>t.taskKind==='summary')?.status==='completed'?'ready':'stale'})
+    result=receipt
+  })
+  invalidateReaderContextAfterImportOrRefreshV1()
+  return result!
+}
